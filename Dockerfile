@@ -18,8 +18,11 @@ RUN ./mvnw dependency:go-offline -B
 # Copier le code source
 COPY src ./src
 
-# Construire l'application (exclure les fichiers binaires du filtrage)
-RUN ./mvnw clean package -DskipTests -Dresources.nonFilteredFileExtensions=p12,jks,keystore
+# Supprimer temporairement le keystore pour le build
+RUN rm -f src/main/resources/keystore.p12
+
+# Construire l'application
+RUN ./mvnw clean package -DskipTests
 
 # Exposer le port 8080
 EXPOSE 8080
