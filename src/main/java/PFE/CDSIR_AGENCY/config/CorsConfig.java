@@ -1,13 +1,12 @@
 package PFE.CDSIR_AGENCY.config;
 
+import java.util.Arrays;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 public class CorsConfig {
@@ -27,62 +26,31 @@ public class CorsConfig {
     @Value("${app.cors.max-age}")
     private long maxAge;
 
+    @Value("${app.cors.allow-credentials:true}")
+    private boolean allowCredentials;
+
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                // Configuration globale pour toutes les routes
+                // Appliquer CORS sur toutes les routes
                 registry.addMapping("/**")
-                        .allowedOrigins(allowedOrigins)
-                        .allowedMethods(allowedMethods)
-                        .allowedHeaders(allowedHeaders)
-                        .exposedHeaders(exposedHeaders)
-                        .allowCredentials(true)
-                        .maxAge(maxAge);
+                    .allowedOrigins(allowedOrigins)
+                    .allowedMethods(allowedMethods)
+                    .allowedHeaders(allowedHeaders)
+                    .exposedHeaders(exposedHeaders)
+                    .allowCredentials(allowCredentials)
+                    .maxAge(maxAge);
 
-                // Configuration spécifique pour les WebSockets si nécessaire
+                // Optionnel : si tu as une API WebSocket (exemple ici)
                 registry.addMapping("/ws/**")
-                        .allowedOrigins(allowedOrigins)
-                        .allowedMethods(allowedMethods)
-                        .allowedHeaders(allowedHeaders)
-                        .allowCredentials(true)
-                        .maxAge(maxAge);
+                    .allowedOrigins(allowedOrigins)
+                    .allowedMethods(allowedMethods)
+                    .allowedHeaders(allowedHeaders)
+                    .allowCredentials(allowCredentials)
+                    .maxAge(maxAge);
             }
         };
-    }
-
-    /**
-     * Méthode pour vérifier la configuration CORS actuelle
-     */
-    public String printCorsConfiguration() {
-        return String.format(
-                "CORS Configuration:\n" +
-                        "Allowed Origins: %s\n" +
-                        "Allowed Methods: %s\n" +
-                        "Allowed Headers: %s\n" +
-                        "Exposed Headers: %s\n" +
-                        "Max Age: %d seconds\n" +
-                        "Credentials Allowed: true",
-                Arrays.toString(allowedOrigins),
-                Arrays.toString(allowedMethods),
-                Arrays.toString(allowedHeaders),
-                Arrays.toString(exposedHeaders),
-                maxAge
-        );
-    }
-
-    /**
-     * Méthode utilitaire pour vérifier si une origine est autorisée
-     */
-    public boolean isOriginAllowed(String origin) {
-        return Arrays.asList(allowedOrigins).contains(origin);
-    }
-
-    /**
-     * Méthode utilitaire pour vérifier si une méthode est autorisée
-     */
-    public boolean isMethodAllowed(String method) {
-        return Arrays.asList(allowedMethods).contains(method.toUpperCase());
     }
 }
