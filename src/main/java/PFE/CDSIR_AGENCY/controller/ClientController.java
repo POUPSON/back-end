@@ -1,8 +1,3 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
 package PFE.CDSIR_AGENCY.controller;
 
 import PFE.CDSIR_AGENCY.dto.LoginRequest;
@@ -28,12 +23,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod; // Importez RequestMethod
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
-@CrossOrigin(origins = {"http://localhost:4200", "http://127.0.0.1:4200"}) // ✅ AJOUT
-
+@CrossOrigin(origins = {"http://localhost:4200", "http://127.0.0.1:4200", "https://cdsir-agency-frontend.onrender.com"}) // ✅ AJOUTEZ L'URL DE VOTRE FRONTEND DÉPLOYÉ ICI
 @RestController
 @RequestMapping({"/api/clients"})
 @Tag(
@@ -42,6 +37,17 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 )
 public class ClientController {
 	private final ClientService clientService;
+
+	@Generated
+	public ClientController(final ClientService clientService) {
+		this.clientService = clientService;
+	}
+
+	// NOUVEAU : Gère explicitement les requêtes OPTIONS pour tous les sous-chemins de /api/clients
+    @RequestMapping(method = RequestMethod.OPTIONS, value = "/**")
+    public ResponseEntity<?> handleOptions() {
+        return ResponseEntity.ok().build();
+    }
 
 	@Operation(
 			summary = "Enregistrer un nouveau client"
@@ -103,7 +109,7 @@ public class ClientController {
 					)
 			)}
 	)})
-	@CrossOrigin(origins = {"http://localhost:4200", "http://127.0.0.1:4200"})
+	// @CrossOrigin(origins = {"http://localhost:4200", "http://127.0.0.1:4200"}) // SUPPRIMÉ : Redondant avec la classe et la config globale
 	@PostMapping({"/login"})
 	@PreAuthorize("permitAll()")
 	public ResponseEntity<LoginResponse> loginClient(@RequestBody @Valid LoginRequest loginRequest) {
@@ -230,10 +236,5 @@ public class ClientController {
 		Long currentClientId = this.clientService.getCurrentAuthenticatedClientId();
 		Client client = this.clientService.updateClient(currentClientId, updatedClient);
 		return ResponseEntity.ok(client);
-	}
-
-	@Generated
-	public ClientController(final ClientService clientService) {
-		this.clientService = clientService;
 	}
 }
