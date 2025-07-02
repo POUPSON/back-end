@@ -3,6 +3,7 @@ package PFE.CDSIR_AGENCY.config;
 import PFE.CDSIR_AGENCY.filter.JwtAuthFilter;
 import PFE.CDSIR_AGENCY.repository.ClientRepository;
 import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,13 +38,22 @@ public class SecurityConfig {
 	private final JwtUtils jwtUtils;
 
 	@Value("${app.cors.allowed-origins}")
-	private String[] allowedOrigins;
+	private String allowedOrigins;
+	
 	@Value("${app.cors.allowed-methods}")
-	private String[] allowedMethods;
+	private String allowedMethods;
+	
 	@Value("${app.cors.allowed-headers}")
-	private String[] allowedHeaders;
+	private String allowedHeaders;
+	
 	@Value("${app.cors.exposed-headers}")
-	private String[] exposedHeaders;
+	private String exposedHeaders;
+	
+	@Value("${app.cors.max-age:3600}")
+	private Long maxAge;
+	
+	@Value("${app.cors.allow-credentials:true}")
+	private Boolean allowCredentials;
 
 	public SecurityConfig(ClientRepository clientRepository, JwtUtils jwtUtils) {
 		this.clientRepository = clientRepository;
@@ -61,7 +71,7 @@ public class SecurityConfig {
 				.headers(headers -> headers
 						.xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
 						.contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"))
-						.frameOptions(frame -> frame.sameOrigin()) // ou .deny() selon vos besoins
+						.frameOptions(frame -> frame.sameOrigin())
 						.httpStrictTransportSecurity(hsts -> hsts
 								.includeSubDomains(true)
 								.preload(true)
@@ -72,8 +82,7 @@ public class SecurityConfig {
 
 				// Autorisations des requêtes
 				.authorizeHttpRequests(auth -> auth
-					   .requestMatchers("/", "/error").permitAll() // ✅ POUR CORRIGER LE 403 A LA RACINE
-
+					    .requestMatchers("/", "/error").permitAll()
 						.requestMatchers(
 								"/api/clients/register",
 								"/api/clients/login",
@@ -150,17 +159,31 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(Arrays.asList(allowedOrigins)); // ✅ CORRECTION
-    configuration.setAllowedMethods(Arrays.asList(allowedMethods));
-    configuration.setAllowedHeaders(Arrays.asList(allowedHeaders));
-    configuration.setExposedHeaders(Arrays.asList(exposedHeaders));
-    configuration.setAllowCredentials(true);
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration); // attention ici : /** et pas /
-    return source;
-}
-
+	public CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		
+		// Conversion des chaînes en listes
+		List<String> origins = Arrays.asList(allowedOrigins.split(","));
+		List<String> methods = Arrays.asList(allowedMethods.split(","));
+		List<String> headers = Arrays.asList(allowedHeaders.split(","));
+		List<String> exposedHeadersList = Arrays.asList(exposedHeaders.split(","));
+		
+		configuration.setAllowedOrigins(origins);
+		configuration.setAllowedMethods(methods);
+		configuration.setAllowedHeaders(headers);
+		configuration.setExposedHeaders(exposedHeadersList);
+		configuration.setAllowCredentials(allowCredentials);
+		configuration.setMaxAge(maxAge);
+		
+		System.out.println("=== CORS CONFIGURATION DEBUG ===");
+		System.out.println("Allowed Origins: " + origins);
+		System.out.println("Allowed Methods: " + methods);
+		System.out.println("Allowed Headers: " + headers);
+		System.out.println("Allow Credentials: " + allowCredentials);
+		System.out.println("================================");
+		
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+		return source;
+	}
 }
