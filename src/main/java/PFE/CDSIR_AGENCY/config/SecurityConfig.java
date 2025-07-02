@@ -82,6 +82,7 @@ public class SecurityConfig {
 
 				// Autorisations des requêtes
 				.authorizeHttpRequests(auth -> auth
+				           .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
 					    .requestMatchers("/", "/error").permitAll()
 						.requestMatchers(
 								"/api/clients/register",
