@@ -148,15 +148,17 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	public CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
-		configuration.setAllowedMethods(Arrays.asList(allowedMethods));
-		configuration.setAllowedHeaders(Arrays.asList(allowedHeaders));
-		configuration.setExposedHeaders(Arrays.asList(exposedHeaders));
-		configuration.setAllowCredentials(true);
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration);
-		return source;
-	}
+	@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(Arrays.asList(allowedOrigins)); // ✅ CORRECTION
+    configuration.setAllowedMethods(Arrays.asList(allowedMethods));
+    configuration.setAllowedHeaders(Arrays.asList(allowedHeaders));
+    configuration.setExposedHeaders(Arrays.asList(exposedHeaders));
+    configuration.setAllowCredentials(true);
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration); // attention ici : /** et pas /
+    return source;
+}
+
 }
