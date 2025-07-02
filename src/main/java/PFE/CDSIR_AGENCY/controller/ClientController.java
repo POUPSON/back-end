@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@CrossOrigin(origins = {"http://localhost:4200", "http://127.0.0.1:4200"}) // ✅ AJOUT
+
 @RestController
 @RequestMapping({"/api/clients"})
 @Tag(
@@ -100,6 +102,7 @@ public class ClientController {
 					)
 			)}
 	)})
+	@CrossOrigin(origins = {"http://localhost:4200", "http://127.0.0.1:4200"})
 	@PostMapping({"/login"})
 	@PreAuthorize("permitAll()")
 	public ResponseEntity<LoginResponse> loginClient(@RequestBody @Valid LoginRequest loginRequest) {
