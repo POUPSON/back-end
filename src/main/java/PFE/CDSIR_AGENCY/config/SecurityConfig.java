@@ -72,6 +72,8 @@ public class SecurityConfig {
 
 				// Autorisations des requêtes
 				.authorizeHttpRequests(auth -> auth
+					   .requestMatchers("/", "/error").permitAll() // ✅ POUR CORRIGER LE 403 A LA RACINE
+
 						.requestMatchers(
 								"/api/clients/register",
 								"/api/clients/login",
