@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // Importez HttpMethod
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -29,15 +30,17 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.http.HttpMethod;
 
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
 	private final ClientRepository clientRepository;
 	private final JwtUtils jwtUtils;
+	private final JwtAuthFilter jwtAuthFilter; // Injectez directement le filtre
+	private final AuthenticationProvider authenticationProvider; // Injectez directement le provider
 
 	@Value("${app.cors.allowed-origins}")
 	private String allowedOrigins;
@@ -57,9 +60,13 @@ public class SecurityConfig {
 	@Value("${app.cors.allow-credentials:true}")
 	private Boolean allowCredentials;
 
-	public SecurityConfig(ClientRepository clientRepository, JwtUtils jwtUtils) {
+	// Modifiez le constructeur pour injecter les beans nécessaires
+	public SecurityConfig(ClientRepository clientRepository, JwtUtils jwtUtils,
+                          JwtAuthFilter jwtAuthFilter, AuthenticationProvider authenticationProvider) {
 		this.clientRepository = clientRepository;
 		this.jwtUtils = jwtUtils;
+		this.jwtAuthFilter = jwtAuthFilter;
+		this.authenticationProvider = authenticationProvider;
 	}
 
 	@Bean
@@ -67,7 +74,7 @@ public class SecurityConfig {
 		http
 				// Désactivation CSRF et configuration CORS
 				.csrf(AbstractHttpConfigurer::disable)
-				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+				.cors(cors -> cors.configurationSource(corsConfigurationSource())) // Applique la configuration CORS
 
 				// Configuration des en-têtes de sécurité
 				.headers(headers -> headers
@@ -84,8 +91,9 @@ public class SecurityConfig {
 
 				// Autorisations des requêtes
 				.authorizeHttpRequests(auth -> auth
-				           .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
-					    .requestMatchers("/", "/error").permitAll()
+				    // TRÈS IMPORTANT : Permet TOUTES les requêtes OPTIONS sans authentification en premier
+				    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+					.requestMatchers("/", "/error").permitAll()
 						.requestMatchers(
 								"/api/clients/register",
 								"/api/clients/login",
@@ -126,8 +134,8 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 				// Configuration du provider d'authentification et du filtre JWT
-				.authenticationProvider(authenticationProvider())
-				.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
+				.authenticationProvider(authenticationProvider) // Utilisez l'instance injectée
+				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // Utilisez l'instance injectée
 
 		return http.build();
 	}
@@ -143,23 +151,25 @@ public class SecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 
-	@Bean
-	public AuthenticationProvider authenticationProvider() {
-		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-		authProvider.setUserDetailsService(userDetailsService());
-		authProvider.setPasswordEncoder(passwordEncoder());
-		return authProvider;
-	}
+	// Le bean AuthenticationProvider est maintenant injecté, pas créé ici
+	// @Bean
+	// public AuthenticationProvider authenticationProvider() {
+	// 	DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+	// 	authProvider.setUserDetailsService(userDetailsService());
+	// 	authProvider.setPasswordEncoder(passwordEncoder());
+	// 	return authProvider;
+	// }
 
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
 		return config.getAuthenticationManager();
 	}
 
-	@Bean
-	public JwtAuthFilter jwtAuthFilter() {
-		return new JwtAuthFilter(jwtUtils, userDetailsService());
-	}
+	// Le bean JwtAuthFilter est maintenant injecté, pas créé ici
+	// @Bean
+	// public JwtAuthFilter jwtAuthFilter() {
+	// 	return new JwtAuthFilter(jwtUtils, userDetailsService());
+	// }
 
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
