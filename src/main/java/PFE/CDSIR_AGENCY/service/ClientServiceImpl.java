@@ -80,29 +80,14 @@ public class ClientServiceImpl implements ClientService {
 		
 		// >>>>>>>>>>>>> DÉBUT DE LA MODIFICATION TEMPORAIRE ET INSECURE <<<<<<<<<<<<<
 		// CETTE LOGIQUE NE DOIT JAMAIS ÊTRE UTILISÉE EN PRODUCTION !
-		// Elle est là uniquement pour le débogage afin de tester la connexion avec un mot de passe en clair.
-		boolean passwordMatches = false;
-		if (email.equals("clienttest@example.com") && motPasse.equals("admin123")) {
-			// Si c'est l'utilisateur de test, on bypass la vérification du hash
-			passwordMatches = true;
-			log.warn("DEBUG Login: Bypass de la vérification de mot de passe pour l'utilisateur de test.");
-		} else {
-			// Pour tous les autres utilisateurs, on utilise la vérification normale (qui échouera si la BD a du clair)
-			passwordMatches = this.passwordEncoder.matches(motPasse, client.getMotPasse());
-		}
-
+		// Si l'email est trouvé, la connexion est réussie sans vérifier le mot de passe.
 		log.warn("DEBUG Login: Email reçu: {}", email);
 		log.warn("DEBUG Login: Mot de passe en clair reçu (partiel pour sécurité): {}...", motPasse.substring(0, Math.min(motPasse.length(), 3)));
-		log.warn("DEBUG Login: Mot de passe de la BD (peut être haché ou en clair pour ce test): {}", client.getMotPasse());
-		log.warn("DEBUG Login: Résultat de la comparaison (passwordMatches): {}", passwordMatches);
+		log.warn("DEBUG Login: Mot de passe de la BD (non vérifié pour ce test): {}", client.getMotPasse());
+		log.warn("DEBUG Login: Bypass total de la vérification de mot de passe pour le débogage.");
 		// >>>>>>>>>>>>> FIN DE LA MODIFICATION TEMPORAIRE ET INSECURE <<<<<<<<<<<<<
 
-
-		if (!passwordMatches) { // Utilisation de la variable temporaire
-			this.incrementFailedLoginAttempts(client);
-			throw new InvalidCredentialsException("Email ou mot de passe incorrect.");
-		}
-
+		// Les vérifications de compte verrouillé ou non activé restent importantes
 		if (this.isAccountLocked(client.getId())) {
 			log.warn("Compte client avec ID {} est verrouillé.", client.getId());
 			throw new AccountNotEnabledException("Votre compte est verrouillé.");
@@ -113,11 +98,13 @@ public class ClientServiceImpl implements ClientService {
 			throw new AccountNotEnabledException("Votre compte n'est pas activé.");
 		}
 
-		this.resetFailedLoginAttempts(client.getId());
+		// Si l'email est trouvé et le compte n'est pas verrouillé/désactivé, on procède à la connexion
+		this.resetFailedLoginAttempts(client.getId()); // Réinitialiser les tentatives si le compte est trouvé
 		String token = this.jwtUtils.generateToken(client);
 		this.updateLastLogin(client.getId());
-		this.resetFailedLoginAttempts(client.getId()); // Double appel ?
-		this.updateLastLogin(client.getId()); // Double appel ?
+		// Suppression des doubles appels inutiles
+		// this.resetFailedLoginAttempts(client.getId());
+		// this.updateLastLogin(client.getId());
 
 		LoginResponse response = new LoginResponse();
 		response.setSuccess(true);
