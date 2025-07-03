@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.Generated;
-import org.antlr.v4.runtime.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +26,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +44,16 @@ public class ClientServiceImpl implements ClientService {
 	private String passwordResetUrl;
 	@Value("${spring.mail.username}")
 	private String emailFrom;
+
+	// Votre constructeur existant
+	public ClientServiceImpl(ClientRepository clientRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, JavaMailSender mailSender, @Value("${app.password.reset.url}") String passwordResetUrl, @Value("${spring.mail.username}") String emailFrom) {
+		this.clientRepository = clientRepository;
+		this.passwordEncoder = passwordEncoder;
+		this.jwtUtils = jwtUtils;
+		this.mailSender = mailSender;
+		this.passwordResetUrl = passwordResetUrl;
+		this.emailFrom = emailFrom;
+	}
 
 	public Client enregistrerClient(Client client) {
 		if (this.clientRepository.findByEmail(client.getEmail()).isPresent()) {
@@ -68,6 +78,15 @@ public class ClientServiceImpl implements ClientService {
 			return new InvalidCredentialsException("Email ou mot de passe incorrect.");
 		});
 
+		// >>>>>>>>>>>>> LIGNES DE DÉBOGAGE À AJOUTER/VÉRIFIER <<<<<<<<<<<<<
+		log.info("DEBUG Login: Email reçu: {}", email);
+		// ATTENTION: Ne logguez JAMAIS le mot de passe en clair en production.
+		// Ici, nous logguons seulement une petite partie pour le débogage.
+		log.info("DEBUG Login: Mot de passe en clair reçu (partiel pour sécurité): {}...", motPasse.substring(0, Math.min(motPasse.length(), 3))); 
+		log.info("DEBUG Login: Mot de passe haché de la BD: {}", client.getMotPasse());
+		log.info("DEBUG Login: passwordEncoder.matches() résultat: {}", this.passwordEncoder.matches(motPasse, client.getMotPasse()));
+		// >>>>>>>>>>>>> FIN DES LIGNES DE DÉBOGAGE <<<<<<<<<<<<<
+
 		if (!this.passwordEncoder.matches(motPasse, client.getMotPasse())) {
 			this.incrementFailedLoginAttempts(client);
 			throw new InvalidCredentialsException("Email ou mot de passe incorrect.");
@@ -86,8 +105,8 @@ public class ClientServiceImpl implements ClientService {
 		this.resetFailedLoginAttempts(client.getId());
 		String token = this.jwtUtils.generateToken(client);
 		this.updateLastLogin(client.getId());
-		this.resetFailedLoginAttempts(client.getId());
-		this.updateLastLogin(client.getId());
+		this.resetFailedLoginAttempts(client.getId()); // Double appel ?
+		this.updateLastLogin(client.getId()); // Double appel ?
 
 		LoginResponse response = new LoginResponse();
 		response.setSuccess(true);
@@ -320,3 +339,4 @@ public class ClientServiceImpl implements ClientService {
 		this.emailFrom = emailFrom;
 	}
 }
+ok je lai 
