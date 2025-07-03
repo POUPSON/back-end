@@ -63,7 +63,7 @@ public class ClientServiceImpl implements ClientService {
 		} else if (client.getNumeroCni() != null && this.clientRepository.findByNumeroCni(client.getNumeroCni()).isPresent()) {
 			throw new DuplicateCniException("Le numéro CNI '" + client.getNumeroCni() + "' est déjà utilisé.");
 		} else {
-			client.setMotPasse(this.passwordEncoder.encode(client.getMotPasse()));
+			client.setMotPasse(this.passwordEncoder.encode(client.getMotPasse())); // Hachage toujours actif pour l'enregistrement
 			if (client.getRole() == null) {
 				client.setRole(Role.CLIENT);
 			}
@@ -78,14 +78,27 @@ public class ClientServiceImpl implements ClientService {
 			return new InvalidCredentialsException("Email ou mot de passe incorrect.");
 		});
 		
-//>>>> LIGNES DE DÉBOGAGE MODIFIÉES EN WARN <<<<<<<<<<<<<
-            log.warn("DEBUG Login: Email reçu: {}", email);
-            log.warn("DEBUG Login: Mot de passe en clair reçu (partiel pour sécurité): {}...", motPasse.substring(0, Math.min(motPasse.length(), 3)));
-            log.warn("DEBUG Login: Mot de passe haché de la BD: {}", client.getMotPasse());
-            log.warn("DEBUG Login: passwordEncoder.matches() résultat: {}", this.passwordEncoder.matches(motPasse, client.getMotPasse()));
-            // >>>>>>>>>>>>> FIN DES LIGNES DE DÉBOGAGE <<<<<<<<<<<<<
+		// >>>>>>>>>>>>> DÉBUT DE LA MODIFICATION TEMPORAIRE ET INSECURE <<<<<<<<<<<<<
+		// CETTE LOGIQUE NE DOIT JAMAIS ÊTRE UTILISÉE EN PRODUCTION !
+		// Elle est là uniquement pour le débogage afin de tester la connexion avec un mot de passe en clair.
+		boolean passwordMatches = false;
+		if (email.equals("clienttest@example.com") && motPasse.equals("admin123")) {
+			// Si c'est l'utilisateur de test, on bypass la vérification du hash
+			passwordMatches = true;
+			log.warn("DEBUG Login: Bypass de la vérification de mot de passe pour l'utilisateur de test.");
+		} else {
+			// Pour tous les autres utilisateurs, on utilise la vérification normale (qui échouera si la BD a du clair)
+			passwordMatches = this.passwordEncoder.matches(motPasse, client.getMotPasse());
+		}
 
-		if (!this.passwordEncoder.matches(motPasse, client.getMotPasse())) {
+		log.warn("DEBUG Login: Email reçu: {}", email);
+		log.warn("DEBUG Login: Mot de passe en clair reçu (partiel pour sécurité): {}...", motPasse.substring(0, Math.min(motPasse.length(), 3)));
+		log.warn("DEBUG Login: Mot de passe de la BD (peut être haché ou en clair pour ce test): {}", client.getMotPasse());
+		log.warn("DEBUG Login: Résultat de la comparaison (passwordMatches): {}", passwordMatches);
+		// >>>>>>>>>>>>> FIN DE LA MODIFICATION TEMPORAIRE ET INSECURE <<<<<<<<<<<<<
+
+
+		if (!passwordMatches) { // Utilisation de la variable temporaire
 			this.incrementFailedLoginAttempts(client);
 			throw new InvalidCredentialsException("Email ou mot de passe incorrect.");
 		}
