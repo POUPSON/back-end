@@ -77,9 +77,13 @@ public class ClientServiceImpl implements ClientService {
 			log.warn("Tentative de connexion échouée pour l'email : {}", email);
 			return new InvalidCredentialsException("Email ou mot de passe incorrect.");
 		});
-
-		// Les logs de débogage temporaires sont retirés ici pour la version finale
-		// Si vous avez besoin de déboguer à nouveau, réactivez-les temporairement.
+		
+//>>>> LIGNES DE DÉBOGAGE MODIFIÉES EN WARN <<<<<<<<<<<<<
+            log.warn("DEBUG Login: Email reçu: {}", email);
+            log.warn("DEBUG Login: Mot de passe en clair reçu (partiel pour sécurité): {}...", motPasse.substring(0, Math.min(motPasse.length(), 3)));
+            log.warn("DEBUG Login: Mot de passe haché de la BD: {}", client.getMotPasse());
+            log.warn("DEBUG Login: passwordEncoder.matches() résultat: {}", this.passwordEncoder.matches(motPasse, client.getMotPasse()));
+            // >>>>>>>>>>>>> FIN DES LIGNES DE DÉBOGAGE <<<<<<<<<<<<<
 
 		if (!this.passwordEncoder.matches(motPasse, client.getMotPasse())) {
 			this.incrementFailedLoginAttempts(client);
