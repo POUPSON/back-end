@@ -72,52 +72,43 @@ public class ClientServiceImpl implements ClientService {
 		}
 	}
 
-	public LoginResponse loginClient(String email, String motPasse) {
-		Client client = this.clientRepository.findByEmail(email).orElseThrow(() -> {
-			log.warn("Tentative de connexion échouée pour l'email : {}", email);
-			return new InvalidCredentialsException("Email ou mot de passe incorrect.");
-		});
-		
-		// >>>>>>>>>>>>> DÉBUT DE LA MODIFICATION TEMPORAIRE ET INSECURE <<<<<<<<<<<<<
-		// CETTE LOGIQUE NE DOIT JAMAIS ÊTRE UTILISÉE EN PRODUCTION !
-		// Si l'email est trouvé, la connexion est réussie sans vérifier le mot de passe.
-		log.warn("DEBUG Login: Email reçu: {}", email);
-		log.warn("DEBUG Login: Mot de passe en clair reçu (partiel pour sécurité): {}...", motPasse.substring(0, Math.min(motPasse.length(), 3)));
-		log.warn("DEBUG Login: Mot de passe de la BD (non vérifié pour ce test): {}", client.getMotPasse());
-		log.warn("DEBUG Login: Bypass total de la vérification de mot de passe pour le débogage.");
-		// >>>>>>>>>>>>> FIN DE LA MODIFICATION TEMPORAIRE ET INSECURE <<<<<<<<<<<<<
+public LoginResponse loginClient(String email, String motPasse) {
+    Client client = this.clientRepository.findByEmail(email).orElseThrow(() -> {
+        log.warn("Tentative de connexion échouée pour l'email : {}", email);
+        return new InvalidCredentialsException("Email incorrect.");
+    });
 
-		// Les vérifications de compte verrouillé ou non activé restent importantes
-		if (this.isAccountLocked(client.getId())) {
-			log.warn("Compte client avec ID {} est verrouillé.", client.getId());
-			throw new AccountNotEnabledException("Votre compte est verrouillé.");
-		}
+    // TEMPORAIRE : On saute la vérification du mot de passe
+    log.warn("Connexion autorisée sans vérification de mot de passe pour le client : {}", email);
 
-		if (!client.isEnabled()) {
-			log.warn("Compte client avec ID {} n'est pas activé.", client.getId());
-			throw new AccountNotEnabledException("Votre compte n'est pas activé.");
-		}
+    if (this.isAccountLocked(client.getId())) {
+        log.warn("Compte client avec ID {} est verrouillé.", client.getId());
+        throw new AccountNotEnabledException("Votre compte est verrouillé.");
+    }
 
-		// Si l'email est trouvé et le compte n'est pas verrouillé/désactivé, on procède à la connexion
-		this.resetFailedLoginAttempts(client.getId()); // Réinitialiser les tentatives si le compte est trouvé
-		String token = this.jwtUtils.generateToken(client);
-		this.updateLastLogin(client.getId());
-		// Suppression des doubles appels inutiles
-		// this.resetFailedLoginAttempts(client.getId());
-		// this.updateLastLogin(client.getId());
+    if (!client.isEnabled()) {
+        log.warn("Compte client avec ID {} n'est pas activé.", client.getId());
+        throw new AccountNotEnabledException("Votre compte n'est pas activé.");
+    }
 
-		LoginResponse response = new LoginResponse();
-		response.setSuccess(true);
-		response.setToken(token);
-		response.setMessage("Connexion réussie pour le client " + client.getEmail());
-		response.setUserId(client.getId());
-		response.setNom(client.getNom());
-		response.setPrenom(client.getPrenom());
-		response.setEmail(client.getEmail());
-		response.setRole(client.getRole().name());
+    this.resetFailedLoginAttempts(client.getId());
+    this.updateLastLogin(client.getId());
 
-		return response;
-	}
+    String token = this.jwtUtils.generateToken(client);
+
+    LoginResponse response = new LoginResponse();
+    response.setSuccess(true);
+    response.setToken(token);
+    response.setMessage("Connexion réussie pour le client " + client.getEmail());
+    response.setUserId(client.getId());
+    response.setNom(client.getNom());
+    response.setPrenom(client.getPrenom());
+    response.setEmail(client.getEmail());
+    response.setRole(client.getRole().name());
+
+    return response;
+}
+
 
 	public void initierReinitialisationMotDePasse(String email) {
 		Client client = (Client)this.clientRepository.findByEmail(email).orElseThrow(() -> {
