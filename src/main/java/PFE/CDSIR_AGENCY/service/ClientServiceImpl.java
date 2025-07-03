@@ -45,7 +45,7 @@ public class ClientServiceImpl implements ClientService {
 	@Value("${spring.mail.username}")
 	private String emailFrom;
 
-	// Votre constructeur existant
+	// Constructeur
 	public ClientServiceImpl(ClientRepository clientRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtils, JavaMailSender mailSender, @Value("${app.password.reset.url}") String passwordResetUrl, @Value("${spring.mail.username}") String emailFrom) {
 		this.clientRepository = clientRepository;
 		this.passwordEncoder = passwordEncoder;
@@ -78,14 +78,8 @@ public class ClientServiceImpl implements ClientService {
 			return new InvalidCredentialsException("Email ou mot de passe incorrect.");
 		});
 
-		// >>>>>>>>>>>>> LIGNES DE DÉBOGAGE À AJOUTER/VÉRIFIER <<<<<<<<<<<<<
-		log.info("DEBUG Login: Email reçu: {}", email);
-		// ATTENTION: Ne logguez JAMAIS le mot de passe en clair en production.
-		// Ici, nous logguons seulement une petite partie pour le débogage.
-		log.info("DEBUG Login: Mot de passe en clair reçu (partiel pour sécurité): {}...", motPasse.substring(0, Math.min(motPasse.length(), 3))); 
-		log.info("DEBUG Login: Mot de passe haché de la BD: {}", client.getMotPasse());
-		log.info("DEBUG Login: passwordEncoder.matches() résultat: {}", this.passwordEncoder.matches(motPasse, client.getMotPasse()));
-		// >>>>>>>>>>>>> FIN DES LIGNES DE DÉBOGAGE <<<<<<<<<<<<<
+		// Les logs de débogage temporaires sont retirés ici pour la version finale
+		// Si vous avez besoin de déboguer à nouveau, réactivez-les temporairement.
 
 		if (!this.passwordEncoder.matches(motPasse, client.getMotPasse())) {
 			this.incrementFailedLoginAttempts(client);
@@ -328,15 +322,4 @@ public class ClientServiceImpl implements ClientService {
 		clientRepository.save(client);
 		log.info("Dernière connexion mise à jour pour le client avec ID : {}", clientId);
 	}
-
-	@Generated
-	public ClientServiceImpl(final ClientRepository clientRepository, final PasswordEncoder passwordEncoder, final JwtUtils jwtUtils, final JavaMailSender mailSender, @Value("${app.password.reset.url}") final String passwordResetUrl, @Value("${spring.mail.username}") final String emailFrom) {
-		this.clientRepository = clientRepository;
-		this.passwordEncoder = passwordEncoder;
-		this.jwtUtils = jwtUtils;
-		this.mailSender = mailSender;
-		this.passwordResetUrl = passwordResetUrl;
-		this.emailFrom = emailFrom;
-	}
 }
-ok je lai 
