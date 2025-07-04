@@ -49,7 +49,7 @@ public class AdminColisController {
             summary = "Obtenir tous les colis (Admin)"
     )
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+
     public ResponseEntity<List<ColisResponseDto>> getAllColis() {
         List<ColisResponseDto> colisList = this.colisService.getAllColis();
         return ResponseEntity.ok(colisList);
