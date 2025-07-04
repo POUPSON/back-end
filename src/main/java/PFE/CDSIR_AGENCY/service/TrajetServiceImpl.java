@@ -10,7 +10,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // <-- Importez cette annotation
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TrajetServiceImpl implements TrajetService {
@@ -23,16 +23,14 @@ public class TrajetServiceImpl implements TrajetService {
     }
 
     @Override
-    @Transactional(readOnly = true) // <-- AJOUTEZ CETTE LIGNE
+    @Transactional(readOnly = true)
     public List<Trajet> getAllTrajets() {
         logger.info("Récupération de tous les trajets.");
-        // Si 'voyages' est une collection lazy-loaded, cette ligne va la charger
-        // car la session est encore ouverte grâce à @Transactional
         return trajetRepository.findAll();
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true) // Ajoutez readOnly = true pour les méthodes de lecture
     public Optional<Trajet> getTrajetById(Long id) {
         logger.info("Récupération du trajet avec l'ID : {}", id);
         return trajetRepository.findById(id);
@@ -72,7 +70,7 @@ public class TrajetServiceImpl implements TrajetService {
         existingTrajet.setQuartierDepart(trajetDetails.getQuartierDepart());
         existingTrajet.setQuartierDestination(trajetDetails.getQuartierDestination());
         existingTrajet.setStatut(trajetDetails.getStatut());
-        // existingTrajet.setVoyages(trajetDetails.getVoyages()); // <-- ATTENTION : Si vous avez cette ligne, elle peut causer des problèmes si la collection n'est pas gérée.
+        // existingTrajet.setVoyages(trajetDetails.getVoyages()); // <-- Assurez-vous que cette ligne est gérée correctement si vous la décommentez un jour.
 
         Trajet updatedTrajet = trajetRepository.save(existingTrajet);
         logger.info("Trajet avec l'ID {} mis à jour avec succès.", updatedTrajet.getId());
@@ -88,5 +86,17 @@ public class TrajetServiceImpl implements TrajetService {
         }
         trajetRepository.deleteById(id);
         logger.info("Trajet avec l'ID {} supprimé avec succès.", id);
+    }
+
+    // AJOUTEZ CETTE MÉTHODE : Implémentation de searchTrajets
+    @Override
+    @Transactional(readOnly = true)
+    public List<Trajet> searchTrajets(String villeDepart, String villeDestination) {
+        logger.info("Recherche de trajets de {} à {}.", villeDepart, villeDestination);
+        // Vous devrez implémenter la logique de recherche ici.
+        // Par exemple, si vous avez une méthode dans le repository:
+        // return trajetRepository.findByVilleDepartContainingIgnoreCaseAndVilleDestinationContainingIgnoreCase(villeDepart, villeDestination);
+        // Ou si vous voulez juste retourner tous les trajets pour l'instant:
+        return trajetRepository.findAll(); // Ou une logique de recherche réelle
     }
 }
