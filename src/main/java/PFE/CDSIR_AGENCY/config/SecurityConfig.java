@@ -2,8 +2,12 @@ package PFE.CDSIR_AGENCY.config;
 
 import PFE.CDSIR_AGENCY.filter.JwtAuthFilter;
 import PFE.CDSIR_AGENCY.repository.ClientRepository;
+import PFE.CDSIR_AGENCY.repository.AdministrateurRepository;
+import PFE.CDSIR_AGENCY.entity.Administrateur;
+import PFE.CDSIR_AGENCY.entity.Client;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +20,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -37,6 +42,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
 	private final ClientRepository clientRepository;
+	private final AdministrateurRepository administrateurRepository;
 	private final JwtUtils jwtUtils;
 
 	@Value("${app.cors.allowed-origins}")
@@ -57,8 +63,9 @@ public class SecurityConfig {
 	@Value("${app.cors.allow-credentials:true}")
 	private Boolean allowCredentials;
 
-	public SecurityConfig(ClientRepository clientRepository, JwtUtils jwtUtils) {
+	public SecurityConfig(ClientRepository clientRepository, AdministrateurRepository administrateurRepository, JwtUtils jwtUtils) {
 		this.clientRepository = clientRepository;
+		this.administrateurRepository = administrateurRepository;
 		this.jwtUtils = jwtUtils;
 	}
 
@@ -67,7 +74,7 @@ public class SecurityConfig {
 		http
 				// Désactivation CSRF et configuration CORS
 				.csrf(AbstractHttpConfigurer::disable)
-				.cors(cors -> cors.configurationSource(corsConfigurationSource())) // Applique la configuration CORS
+				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
 				// Configuration des en-têtes de sécurité
 				.headers(headers -> headers
@@ -104,8 +111,11 @@ public class SecurityConfig {
 								"/swagger-ui/**",
 								"/swagger-ui.html"
 						).permitAll()
-						// TEMPORAIREMENT POUR LE DÉBOGAGE : Permet l'accès à /api/admin/** sans rôle spécifique
-						.requestMatchers("/api/admin/**").permitAll() // <-- MODIFIÉ ICI
+						// TEMPORAIRE POUR DEBUG : Permet TOUTES les requêtes admin sans authentification
+						.requestMatchers("/api/admin/**").permitAll() // <-- CHANGEMENT MAJEUR ICI
+						// Ancienne ligne commentée (à remettre en production) :
+						// .requestMatchers("/api/admin/register").hasRole("ADMIN")
+						// .requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.requestMatchers("/api/clients/me/**").hasRole("CLIENT")
 						.requestMatchers("/api/reservation/client/**").hasAnyRole("CLIENT", "AGENT")
 						.requestMatchers("/api/reservation/validate").hasRole("AGENT")
@@ -128,16 +138,29 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 				// Configuration du provider d'authentification et du filtre JWT
-				.authenticationProvider(authenticationProvider()) // Utilisez la méthode @Bean
-				.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class); // Utilisez la méthode @Bean
+				// Nous laissons le filtre et le provider, mais ils ne s'appliqueront pas aux routes /api/admin/**
+				// tant que .permitAll() est actif.
+				.authenticationProvider(authenticationProvider())
+				.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
 
 	@Bean
 	public UserDetailsService userDetailsService() {
-		return username -> (UserDetails) clientRepository.findByEmail(username)
-				.orElseThrow(() -> new UsernameNotFoundException("Client non trouvé: " + username));
+		return username -> {
+			Optional<Client> clientOptional = clientRepository.findByEmail(username);
+			if (clientOptional.isPresent()) {
+				return (UserDetails) clientOptional.get();
+			}
+
+			Optional<Administrateur> adminOptional = administrateurRepository.findByEmail(username);
+			if (adminOptional.isPresent()) {
+				return (UserDetails) adminOptional.get();
+			}
+
+			throw new UsernameNotFoundException("Utilisateur non trouvé: " + username);
+		};
 	}
 
 	@Bean
@@ -145,11 +168,11 @@ public class SecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 
-	@Bean // Redéfinissez cette méthode comme un bean
+	@Bean
 	public AuthenticationProvider authenticationProvider() {
 		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-		authProvider.setUserDetailsService(userDetailsService()); // Dépend de userDetailsService()
-		authProvider.setPasswordEncoder(passwordEncoder()); // Dépend de passwordEncoder()
+		authProvider.setUserDetailsService(userDetailsService());
+		authProvider.setPasswordEncoder(passwordEncoder());
 		return authProvider;
 	}
 
@@ -158,16 +181,15 @@ public class SecurityConfig {
 		return config.getAuthenticationManager();
 	}
 
-	@Bean // Redéfinissez cette méthode comme un bean
+	@Bean
 	public JwtAuthFilter jwtAuthFilter() {
-		return new JwtAuthFilter(jwtUtils, userDetailsService()); // Dépend de jwtUtils et userDetailsService()
+		return new JwtAuthFilter(jwtUtils, userDetailsService());
 	}
 
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		
-		// Conversion des chaînes en listes
 		List<String> origins = Arrays.asList(allowedOrigins.split(","));
 		List<String> methods = Arrays.asList(allowedMethods.split(","));
 		List<String> headers = Arrays.asList(allowedHeaders.split(","));
