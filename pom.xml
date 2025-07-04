@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    
+
     <modelVersion>4.0.0</modelVersion>
-    
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.5</version>
+        <version>3.3.0</version> <!-- CHANGEZ CETTE LIGNE DE 3.4.5 à 3.3.0 -->
         <relativePath/>
     </parent>
-    
+
     <groupId>PFE</groupId>
     <artifactId>CDSIR_AGENCE_BACKEND</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    
+
     <name>CDSIR_AGENCY_BACKEND</name>
     <description>BACKEND POUR LE PROJET DE PFE</description>
-    
+
     <properties>
         <java.version>17</java.version>
         <jjwt.version>0.11.5</jjwt.version>
@@ -26,7 +26,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
-    
+
     <dependencies>
         <!-- Spring Boot Starters -->
         <dependency>
@@ -34,10 +34,10 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         <dependency>
-    <groupId>io.github.cdimascio</groupId>
-    <artifactId>dotenv-java</artifactId>
-    <version>2.2.4</version>
-</dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>2.2.4</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
@@ -54,14 +54,21 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
-        
+
         <!-- Database -->
+        <!-- Supprimez le connecteur MySQL si vous utilisez PostgreSQL -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-        
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.6.0</version> <!-- ou une version récente stable -->
+        </dependency>
+
         <!-- JWT Authentication -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -80,7 +87,7 @@
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
         </dependency>
-        
+
         <!-- Twilio SMS -->
         <dependency>
             <groupId>com.twilio.sdk</groupId>
@@ -93,20 +100,14 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-    <groupId>org.postgresql</groupId>
-    <artifactId>postgresql</artifactId>
-    <version>42.6.0</version> <!-- ou une version récente stable -->
-</dependency>
 
-        
         <!-- Dev Tools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -114,14 +115,14 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        
+
         <!-- OpenAPI Documentation -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
         </dependency>
-        
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -134,7 +135,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
+
     <build>
         <plugins>
             <!-- Spring Boot Maven Plugin -->
@@ -150,7 +151,7 @@
                     </excludes>
                 </configuration>
             </plugin>
-            
+
             <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -162,7 +163,7 @@
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
-            
+
             <!-- Maven Resources Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -173,7 +174,7 @@
                 </configuration>
             </plugin>
         </plugins>
-        
+
         <!-- Resource Filtering Configuration -->
         <resources>
             <resource>
@@ -181,27 +182,27 @@
                 <filtering>true</filtering>
             </resource>
             <resource>
-            <directory>src/main/resources</directory>
-            <filtering>false</filtering>
-            <includes>
-                <include>**/*.p12</include>
-                <include>**/*.jks</include>
-                <include>**/*.keystore</include>
-                <include>**/*.pfx</include>
-            </includes>
-        </resource>
-        
-        <!-- Autres fichiers - avec filtrage -->
-        <resource>
-            <directory>src/main/resources</directory>
-            <filtering>true</filtering>
-            <excludes>
-                <exclude>**/*.p12</exclude>
-                <exclude>**/*.jks</exclude>
-                <exclude>**/*.keystore</exclude>
-                <exclude>**/*.pfx</exclude>
-            </excludes>
-        </resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.p12</include>
+                    <include>**/*.jks</include>
+                    <include>**/*.keystore</include>
+                    <include>**/*.pfx</include>
+                </includes>
+            </resource>
+
+            <!-- Autres fichiers - avec filtrage -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <excludes>
+                    <exclude>**/*.p12</exclude>
+                    <exclude>**/*.jks</exclude>
+                    <exclude>**/*.keystore</exclude>
+                    <exclude>**/*.pfx</exclude>
+                </excludes>
+            </resource>
         </resources>
     </build>
 </project>
