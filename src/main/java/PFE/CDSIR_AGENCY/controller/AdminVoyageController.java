@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping({"/api/admin/voyages"})
-@PreAuthorize("hasRole('ADMIN')")
+
 public class AdminVoyageController {
     private final VoyageService voyageService;
 
