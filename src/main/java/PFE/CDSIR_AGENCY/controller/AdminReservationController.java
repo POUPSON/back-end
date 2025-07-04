@@ -35,7 +35,6 @@ import org.springframework.web.bind.annotation.RestController;
         name = "Gestion Réservations (Admin)",
         description = "API pour la gestion des réservations par les administrateurs et agents"
 )
-@PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
 public class AdminReservationController {
     private final ReservationService reservationService;
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
