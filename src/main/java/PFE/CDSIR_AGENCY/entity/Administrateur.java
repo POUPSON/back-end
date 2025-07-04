@@ -1,8 +1,3 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
 package PFE.CDSIR_AGENCY.entity;
 
 import jakarta.persistence.Column;
@@ -31,10 +26,17 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Entity
 @Table(
         name = "administrateur",
-        uniqueConstraints = {@UniqueConstraint(
+        uniqueConstraints = {
+            @UniqueConstraint(
                 columnNames = {"numero_cni"},
                 name = "uk_administrateur_numero_cni"
-        )}
+            ),
+            // AJOUTEZ UNE CONTRAINTE D'UNICITÉ POUR L'EMAIL
+            @UniqueConstraint(
+                columnNames = {"email_administrateur"}, // Nom de la colonne dans la DB
+                name = "uk_administrateur_email"
+            )
+        }
 )
 public class Administrateur implements UserDetails {
     @Id
@@ -45,6 +47,7 @@ public class Administrateur implements UserDetails {
             name = "id_administrateur"
     )
     private Long id;
+
     @Column(
             name = "nom_administrateur"
     )
@@ -54,9 +57,23 @@ public class Administrateur implements UserDetails {
             max = 100,
             message = "Le nom ne doit pas dépasser 100 caractères"
     ) String nomAdministrateur;
+
+    // NOUVEAU CHAMP EMAIL
+    @Column(
+            name = "email_administrateur", // Nom de la colonne dans la base de données
+            nullable = false,
+            unique = true // L'email doit être unique
+    )
+    private @NotBlank(
+            message = "L'email de l'administrateur est requis"
+    ) @Size(
+            max = 255,
+            message = "L'email ne doit pas dépasser 255 caractères"
+    ) String email; // <-- AJOUTEZ CE CHAMP
+
     @Column(
             name = "numero_cni",
-            unique = true
+            unique = true // Assurez-vous que c'est bien unique ici aussi
     )
     private @NotBlank(
             message = "Le numéro de CNI est requis"
@@ -64,6 +81,7 @@ public class Administrateur implements UserDetails {
             max = 20,
             message = "Le numéro de CNI ne doit pas dépasser 20 caractères"
     ) String numeroCni;
+
     @Column(
             name = "mot_passe"
     )
@@ -73,6 +91,7 @@ public class Administrateur implements UserDetails {
             max = 255,
             message = "Le mot de passe est trop long"
     ) String motPasse;
+
     @ManyToOne(
             fetch = FetchType.LAZY
     )
@@ -80,21 +99,25 @@ public class Administrateur implements UserDetails {
             name = "id_agence"
     )
     private Agence agence;
+
     @Enumerated(EnumType.STRING)
     @Column(
             name = "role",
             nullable = false
     )
     private Role role;
+
     @Column(
             name = "statut"
     )
-    private String statut;
+    private String statut; // Correspond à 'enabled' et 'accountLocked' de l'autre version
+
     @Column(
             name = "date_creation",
             updatable = false
     )
     private LocalDateTime dateCreation;
+
     @Column(
             name = "date_modification"
     )
@@ -113,8 +136,9 @@ public class Administrateur implements UserDetails {
         return this.motPasse;
     }
 
+    @Override
     public String getUsername() {
-        return this.numeroCni;
+        return this.email; // <-- CHANGEMENT ICI : UTILISE L'EMAIL COMME USERNAME
     }
 
     public boolean isAccountNonExpired() {
@@ -122,7 +146,9 @@ public class Administrateur implements UserDetails {
     }
 
     public boolean isAccountNonLocked() {
-        return true;
+        // Si 'statut' est utilisé pour le verrouillage, ajustez ici.
+        // Par exemple, si "ACTIF" signifie non verrouillé.
+        return "ACTIF".equalsIgnoreCase(this.statut);
     }
 
     public boolean isCredentialsNonExpired() {
@@ -130,7 +156,7 @@ public class Administrateur implements UserDetails {
     }
 
     public boolean isEnabled() {
-        return "ACTIF".equalsIgnoreCase(this.statut);
+        return "ACTIF".equalsIgnoreCase(this.statut); // Si "ACTIF" signifie activé
     }
 
     @Generated
@@ -140,6 +166,18 @@ public class Administrateur implements UserDetails {
         this.dateCreation = LocalDateTime.now();
     }
 
+    // NOUVEAUX GETTER ET SETTER POUR EMAIL
+    @Generated
+    public String getEmail() {
+        return this.email;
+    }
+
+    @Generated
+    public void setEmail(final String email) {
+        this.email = email;
+    }
+
+    // --- Méthodes existantes (gardées pour éviter de casser le code) ---
     @Generated
     public Long getId() {
         return this.id;
@@ -261,6 +299,17 @@ public class Administrateur implements UserDetails {
                     return false;
                 }
 
+                // AJOUT DE LA COMPARAISON POUR L'EMAIL
+                Object this$email = this.getEmail();
+                Object other$email = other.getEmail();
+                if (this$email == null) {
+                    if (other$email != null) {
+                        return false;
+                    }
+                } else if (!this$email.equals(other$email)) {
+                    return false;
+                }
+
                 Object this$numeroCni = this.getNumeroCni();
                 Object other$numeroCni = other.getNumeroCni();
                 if (this$numeroCni == null) {
@@ -349,6 +398,8 @@ public class Administrateur implements UserDetails {
         result = result * 59 + ($id == null ? 43 : $id.hashCode());
         Object $nomAdministrateur = this.getNomAdministrateur();
         result = result * 59 + ($nomAdministrateur == null ? 43 : $nomAdministrateur.hashCode());
+        Object $email = this.getEmail(); // AJOUT DE L'EMAIL AU HASHCODE
+        result = result * 59 + ($email == null ? 43 : $email.hashCode());
         Object $numeroCni = this.getNumeroCni();
         result = result * 59 + ($numeroCni == null ? 43 : $numeroCni.hashCode());
         Object $motPasse = this.getMotPasse();
@@ -368,6 +419,6 @@ public class Administrateur implements UserDetails {
 
     @Generated
     public String toString() {
-        return "Administrateur(id=" + this.getId() + ", nomAdministrateur=" + this.getNomAdministrateur() + ", numeroCni=" + this.getNumeroCni() + ", motPasse=" + this.getMotPasse() + ", agence=" + this.getAgence() + ", role=" + this.getRole() + ", statut=" + this.getStatut() + ", dateCreation=" + this.getDateCreation() + ", dateModification=" + this.getDateModification() + ")";
+        return "Administrateur(id=" + this.getId() + ", nomAdministrateur=" + this.getNomAdministrateur() + ", email=" + this.getEmail() + ", numeroCni=" + this.getNumeroCni() + ", motPasse=" + this.getMotPasse() + ", agence=" + this.getAgence() + ", role=" + this.getRole() + ", statut=" + this.getStatut() + ", dateCreation=" + this.getDateCreation() + ", dateModification=" + this.getDateModification() + ")";
     }
 }
