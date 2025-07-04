@@ -12,5 +12,12 @@ public interface TrajetRepository extends JpaRepository<Trajet, Long> {
 
 	boolean existsByVilleDepartAndVilleDestinationAndQuartierDepartAndQuartierDestination(String villeDepart, String villeDestination, String quartierDepart, String quartierDestination);
 
+	  // AJOUTEZ CETTE LIGNE : Déclaration de la méthode pour la vérification des doublons
+    Optional<Trajet> findByVilleDepartAndVilleDestinationAndQuartierDepartAndQuartierDestination(
+        String villeDepart,
+        String villeDestination,
+        String quartierDepart,
+        String quartierDestination
+    );
 	Optional<Trajet> findByVilleDepartIgnoreCaseAndVilleDestinationIgnoreCase(String villeDepart, String villeDestination);
 }
