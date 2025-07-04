@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
         name = "Administration Clients",
         description = "API pour la gestion des clients par les administrateurs"
 )
-@PreAuthorize("hasRole('ADMIN')")
+
 public class AdminClientController {
     private final ClientService clientService;
 
