@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
-import lombok.Generated;
+import lombok.Generated; // Gardez cette annotation si vous utilisez Lombok et que vous voulez exclure ces méthodes de son traitement
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -59,6 +59,7 @@ public class Client implements UserDetails {
 	private String adresse;
 
 	@Column(name = "date_naissance")
+	@NotNull(message = "La date de naissance est requise") // Ajouté si vous voulez la rendre obligatoire
 	private LocalDate dateNaissance;
 
 	@Column(name = "lieu_residence")
@@ -74,17 +75,19 @@ public class Client implements UserDetails {
 	@Column(name = "token_expiration")
 	private LocalDateTime tokenExpiration;
 
-	@Column(name = "date_creation", updatable = false)
-	private LocalDateTime dateCreation = LocalDateTime.now();
+	// NE PAS INITIALISER ICI. Laissez @PrePersist le faire.
+	@Column(name = "date_creation", updatable = false, nullable = false)
+	private LocalDateTime dateCreation;
 
-	@Column(name = "date_modification")
+	// NE PAS INITIALISER ICI. Laissez @PrePersist/@PreUpdate le faire.
+	@Column(name = "date_modification", nullable = false)
 	private LocalDateTime dateModification;
 
 	@Column(name = "last_login")
 	private LocalDateTime lastLogin;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "role")
+	@Column(name = "role", nullable = false) // Le rôle est aussi généralement non-null
 	private Role role;
 
 	@Column(name = "account_locked")
@@ -99,10 +102,20 @@ public class Client implements UserDetails {
 	@Column(name = "two_factor_secret", length = 100)
 	private String twoFactorSecret;
 
+	// ====================================================================
+	// RÉINTRODUISEZ CES MÉTHODES POUR GÉRER AUTOMATIQUEMENT LES DATES
+	// ====================================================================
+	@PrePersist
+	protected void onCreate() {
+		this.dateCreation = LocalDateTime.now();
+		this.dateModification = LocalDateTime.now(); // Initialiser aussi dateModification à la création
+	}
+
 	@PreUpdate
 	protected void onUpdate() {
 		this.dateModification = LocalDateTime.now();
 	}
+	// ====================================================================
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -144,7 +157,7 @@ public class Client implements UserDetails {
 		this.role = Role.CLIENT;
 	}
 
-	// Getters and Setters
+	// Getters and Setters (laissez-les tels quels)
 	@Generated
 	public Long getId() {
 		return id;
