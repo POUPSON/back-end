@@ -85,8 +85,8 @@ public class SecurityConfig {
 
 				// Autorisations des requêtes
 				.authorizeHttpRequests(auth -> auth
-				    // TRÈS IMPORTANT : Permet TOUTES les requêtes OPTIONS sans authentification en premier
-				    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+				    // TRÈS IMPORTANT : Permet TOUTES les requêtes OPTIONS sans authentification en premier
+				    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 					.requestMatchers("/", "/error").permitAll()
 						.requestMatchers(
 								"/api/clients/register",
@@ -105,7 +105,8 @@ public class SecurityConfig {
 								"/swagger-ui/**",
 								"/swagger-ui.html"
 						).permitAll()
-						.requestMatchers("/api/admin/**").hasRole("ADMIN")
+						// TEMPORAIREMENT POUR LE DÉBOGAGE : Permet l'accès à /api/admin/** sans rôle spécifique
+						.requestMatchers("/api/admin/**").permitAll() // <-- MODIFIÉ ICI
 						.requestMatchers("/api/clients/me/**").hasRole("CLIENT")
 						.requestMatchers("/api/reservation/client/**").hasAnyRole("CLIENT", "AGENT")
 						.requestMatchers("/api/reservation/validate").hasRole("AGENT")
