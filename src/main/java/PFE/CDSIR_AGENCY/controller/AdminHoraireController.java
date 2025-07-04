@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping({"/api/admin/horaires"})
-@PreAuthorize("hasRole('ADMIN')")
+
 public class AdminHoraireController {
     private final HoraireService horaireService;
 
