@@ -1,17 +1,15 @@
 package PFE.CDSIR_AGENCY.controller.admin;
 
 import PFE.CDSIR_AGENCY.entity.Trajet;
-import PFE.CDSIR_AGENCY.exception.DuplicateResourceException; // Assurez-vous d'importer si vous l'utilisez
+import PFE.CDSIR_AGENCY.exception.DuplicateResourceException;
 import PFE.CDSIR_AGENCY.exception.NotFoundException;
-import PFE.CDSIR_AGENCY.exception.GlobalExceptionHandler; // Importez votre gestionnaire d'exceptions global
-import PFE.CDSIR_AGENCY.service.TrajetService;
-import jakarta.validation.Valid; // Importez cette annotation pour la validation
+import PFE.CDSIR_AGENCY.exception.GlobalExceptionHandler;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.Generated;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.security.access.prepost.PreAuthorize; // Commenté pour un accès sans auth
-import org.springframework.web.bind.annotation.CrossOrigin; // Importez cette annotation
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,10 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping({"/api/admin/trajets"})
-@CrossOrigin(origins = "http://localhost:4200") // Permet les requêtes depuis votre frontend Angular
-// Ou pour toutes les origines (moins sécurisé en production, mais utile pour le dev) :
-// @CrossOrigin(origins = "*")
-// @PreAuthorize("hasRole('ADMIN')") // Commenté pour un accès sans authentification
+@CrossOrigin(origins = "http://localhost:4200")
 public class AdminTrajetController {
     private final TrajetService trajetService;
 
@@ -46,7 +41,7 @@ public class AdminTrajetController {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "uri=/api/admin/trajets/" + id,
+                "/api/admin/trajets/" + id, // <-- CORRECTION ICI: concaténation de l'ID en String
                 HttpStatus.NOT_FOUND.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.NOT_FOUND);
@@ -54,7 +49,7 @@ public class AdminTrajetController {
     }
 
     @PostMapping
-    public ResponseEntity<Trajet> createTrajet(@Valid @RequestBody Trajet trajet) { // Ajout de @Valid
+    public ResponseEntity<Trajet> createTrajet(@Valid @RequestBody Trajet trajet) {
         try {
             Trajet savedTrajet = this.trajetService.createTrajet(trajet);
             return new ResponseEntity(savedTrajet, HttpStatus.CREATED);
@@ -62,7 +57,7 @@ public class AdminTrajetController {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "uri=/api/admin/trajets",
+                "/api/admin/trajets", // <-- CORRECTION ICI: URI fixe pour la création
                 HttpStatus.CONFLICT.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.CONFLICT);
@@ -70,7 +65,7 @@ public class AdminTrajetController {
     }
 
     @PutMapping({"/{id}"})
-    public ResponseEntity<Trajet> updateTrajet(@PathVariable Long id, @Valid @RequestBody Trajet trajet) { // Ajout de @Valid
+    public ResponseEntity<Trajet> updateTrajet(@PathVariable Long id, @Valid @RequestBody Trajet trajet) {
         try {
             Trajet updatedTrajet = this.trajetService.updateTrajet(id, trajet);
             return ResponseEntity.ok(updatedTrajet);
@@ -78,15 +73,15 @@ public class AdminTrajetController {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "uri=/api/admin/trajets/" + id,
+                "/api/admin/trajets/" + id, // <-- CORRECTION ICI: concaténation de l'ID en String
                 HttpStatus.NOT_FOUND.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.NOT_FOUND);
-        } catch (DuplicateResourceException e) { // Gérer les doublons lors de la mise à jour si votre service le fait
+        } catch (DuplicateResourceException e) {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "uri=/api/admin/trajets/" + id,
+                "/api/admin/trajets/" + id, // <-- CORRECTION ICI: concaténation de l'ID en String
                 HttpStatus.CONFLICT.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.CONFLICT);
@@ -102,7 +97,7 @@ public class AdminTrajetController {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "uri=/api/admin/trajets/" + id,
+                "/api/admin/trajets/" + id, // <-- CORRECTION ICI: concaténation de l'ID en String
                 HttpStatus.NOT_FOUND.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.NOT_FOUND);
@@ -115,7 +110,6 @@ public class AdminTrajetController {
         return trajets.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(trajets);
     }
 
-    // NOUVEAUX ENDPOINTS POUR LES VILLES UNIQUES
     @GetMapping("/villes-depart")
     public ResponseEntity<List<String>> getDistinctVillesDepart() {
         List<String> villes = trajetService.getDistinctVillesDepart();
