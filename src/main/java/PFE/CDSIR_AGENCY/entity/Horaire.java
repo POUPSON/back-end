@@ -5,6 +5,7 @@
 
 package PFE.CDSIR_AGENCY.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // <-- N'oubliez pas cet import !
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -58,11 +59,13 @@ public class Horaire {
 			max = 20,
 			message = "Le statut ne doit pas dépasser 20 caractères"
 	) String statut;
+
 	@OneToMany(
 			mappedBy = "horaire",
 			cascade = {CascadeType.ALL},
 			orphanRemoval = true
 	)
+	@JsonIgnore // <-- AJOUTEZ CETTE LIGNE ICI
 	private List<Voyage> voyages;
 
 	@Generated
