@@ -4,6 +4,7 @@ import PFE.CDSIR_AGENCY.entity.Trajet;
 import PFE.CDSIR_AGENCY.exception.DuplicateResourceException;
 import PFE.CDSIR_AGENCY.exception.NotFoundException;
 import PFE.CDSIR_AGENCY.exception.GlobalExceptionHandler;
+import PFE.CDSIR_AGENCY.service.TrajetService; // <-- AJOUTEZ CET IMPORT MANQUANT !
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.Generated;
@@ -41,7 +42,7 @@ public class AdminTrajetController {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "/api/admin/trajets/" + id, // <-- CORRECTION ICI: concaténation de l'ID en String
+                "/api/admin/trajets/" + id,
                 HttpStatus.NOT_FOUND.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.NOT_FOUND);
@@ -57,7 +58,7 @@ public class AdminTrajetController {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "/api/admin/trajets", // <-- CORRECTION ICI: URI fixe pour la création
+                "/api/admin/trajets",
                 HttpStatus.CONFLICT.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.CONFLICT);
@@ -73,7 +74,7 @@ public class AdminTrajetController {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "/api/admin/trajets/" + id, // <-- CORRECTION ICI: concaténation de l'ID en String
+                "/api/admin/trajets/" + id,
                 HttpStatus.NOT_FOUND.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.NOT_FOUND);
@@ -81,7 +82,7 @@ public class AdminTrajetController {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "/api/admin/trajets/" + id, // <-- CORRECTION ICI: concaténation de l'ID en String
+                "/api/admin/trajets/" + id,
                 HttpStatus.CONFLICT.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.CONFLICT);
@@ -97,7 +98,7 @@ public class AdminTrajetController {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
                 e.getMessage(),
-                "/api/admin/trajets/" + id, // <-- CORRECTION ICI: concaténation de l'ID en String
+                "/api/admin/trajets/" + id,
                 HttpStatus.NOT_FOUND.value()
             );
             return new ResponseEntity(errorDetails, HttpStatus.NOT_FOUND);
