@@ -1,13 +1,10 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
 package PFE.CDSIR_AGENCY.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // Importez cette annotation
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType; // Ajoutez FetchType si non présent
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,6 +12,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.Generated;
@@ -22,13 +20,10 @@ import lombok.Generated;
 @Entity
 @Table(
 		name = "agence",
-		uniqueConstraints = {@UniqueConstraint(
-				columnNames = {"nom_agence"},
-				name = "uk_agence_nom_agence"
-		), @UniqueConstraint(
-				columnNames = {"telephone_agence"},
-				name = "uk_agence_telephone_agence"
-		)}
+		uniqueConstraints = {
+				@UniqueConstraint(columnNames = {"nom_agence"}, name = "uk_agence_nom_agence"),
+				@UniqueConstraint(columnNames = {"telephone_agence"}, name = "uk_agence_telephone_agence")
+		}
 )
 public class Agence {
 	@Id
@@ -39,9 +34,11 @@ public class Agence {
 			name = "id_agence"
 	)
 	private Long id;
+
 	@Column(
 			name = "nom_agence",
-			unique = true
+			unique = true,
+			length = 100
 	)
 	private @NotBlank(
 			message = "Le nom de l'agence est requis"
@@ -49,8 +46,10 @@ public class Agence {
 			max = 100,
 			message = "Le nom de l'agence ne doit pas dépasser 100 caractères"
 	) String nomAgence;
+
 	@Column(
-			name = "ville_agence"
+			name = "ville_agence",
+			length = 100
 	)
 	private @NotBlank(
 			message = "La ville de l'agence est requise"
@@ -58,49 +57,75 @@ public class Agence {
 			max = 100,
 			message = "La ville ne doit pas dépasser 100 caractères"
 	) String villeAgence;
+
+	@Column(
+			name = "localisation",
+			length = 150
+	)
 	private @Size(
 			max = 150,
 			message = "La localisation ne doit pas dépasser 150 caractères"
 	) String localisation;
+
 	@Column(
 			name = "telephone_agence",
-			unique = true
+			unique = true,
+			length = 20
 	)
 	private @NotBlank(
 			message = "Le téléphone de l'agence est requis"
 	) @Size(
 			max = 20,
 			message = "Le numéro de téléphone ne doit pas dépasser 20 caractères"
-	) String telephoneAgence;
+	)
+	@Pattern(regexp = "^[0-9]{8,15}$", message = "Le format du téléphone est invalide (8 à 15 chiffres)")
+	String telephoneAgence;
+
 	@Column(
 			name = "statut",
 			length = 20
 	)
 	private String statut;
+
+	// AJOUTEZ @JsonIgnore sur toutes les collections OneToMany
 	@OneToMany(
 			mappedBy = "agence",
 			cascade = {CascadeType.ALL},
-			orphanRemoval = true
+			orphanRemoval = true,
+			fetch = FetchType.LAZY
 	)
+	@JsonIgnore // <-- AJOUTÉ
 	private List<Administrateur> administrateurs;
+
 	@OneToMany(
 			mappedBy = "agence",
 			cascade = {CascadeType.ALL},
-			orphanRemoval = true
+			orphanRemoval = true,
+			fetch = FetchType.LAZY
 	)
+	@JsonIgnore // <-- AJOUTÉ
 	private List<Vehicule> vehicules;
+
 	@OneToMany(
 			mappedBy = "agence",
 			cascade = {CascadeType.ALL},
-			orphanRemoval = true
+			orphanRemoval = true,
+			fetch = FetchType.LAZY
 	)
+	@JsonIgnore // <-- AJOUTÉ
 	private List<Voyage> voyages;
+
 	@OneToMany(
 			mappedBy = "agence",
 			cascade = {CascadeType.ALL},
-			orphanRemoval = true
+			orphanRemoval = true,
+			fetch = FetchType.LAZY
 	)
+	@JsonIgnore // <-- AJOUTÉ
 	private List<Colis> colis;
+
+	// --- Getters et Setters générés par Lombok ou manuellement ---
+	// (Les annotations @Generated indiquent qu'ils sont générés)
 
 	@Generated
 	public Long getId() {
