@@ -5,6 +5,7 @@
 
 package PFE.CDSIR_AGENCY.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // <-- N'oubliez pas cet import !
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -76,6 +77,7 @@ public class Voyage {
 			max = 20,
 			message = "Le statut ne doit pas dépasser 20 caractères"
 	) String statut;
+
 	@ManyToOne(
 			fetch = FetchType.LAZY
 	)
@@ -83,9 +85,11 @@ public class Voyage {
 			name = "id_trajet",
 			nullable = false
 	)
+	@JsonIgnore // <-- AJOUTEZ CETTE LIGNE ICI
 	private @NotNull(
 			message = "Le voyage doit être associé à un trajet"
 	) Trajet trajet;
+
 	@ManyToOne(
 			fetch = FetchType.LAZY
 	)
@@ -93,9 +97,11 @@ public class Voyage {
 			name = "id_horaire",
 			nullable = false
 	)
+	@JsonIgnore // <-- AJOUTEZ CETTE LIGNE ICI
 	private @NotNull(
 			message = "Le voyage doit être associé à un horaire"
 	) Horaire horaire;
+
 	@ManyToOne(
 			fetch = FetchType.LAZY
 	)
@@ -103,9 +109,11 @@ public class Voyage {
 			name = "id_vehicule",
 			nullable = false
 	)
+	@JsonIgnore // <-- AJOUTEZ CETTE LIGNE ICI
 	private @NotNull(
 			message = "Le voyage doit être associé à un véhicule"
 	) Vehicule vehicule;
+
 	@ManyToOne(
 			fetch = FetchType.LAZY
 	)
@@ -113,14 +121,17 @@ public class Voyage {
 			name = "id_agence",
 			nullable = false
 	)
+	@JsonIgnore // <-- AJOUTEZ CETTE LIGNE ICI
 	private @NotNull(
 			message = "Le voyage doit être associé à une agence"
 	) Agence agence;
+
 	@OneToMany(
 			mappedBy = "voyage",
 			cascade = {CascadeType.ALL},
 			orphanRemoval = true
 	)
+	@JsonIgnore // <-- AJOUTEZ CETTE LIGNE ICI
 	private List<Reservation> reservations;
 
 	@Generated
