@@ -1,8 +1,3 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
 package PFE.CDSIR_AGENCY.service;
 
 import PFE.CDSIR_AGENCY.entity.Trajet;
@@ -19,8 +14,11 @@ public interface TrajetService {
 	Trajet updateTrajet(Long id, Trajet trajetDetails);
 
 	void deleteTrajet(Long id);
-// AJOUTEZ CETTE LIGNE : Déclaration de la méthode searchTrajets
+
+    // Votre méthode existante pour la recherche
     List<Trajet> searchTrajets(String villeDepart, String villeDestination);
 
+    // NOUVELLES MÉTHODES POUR RÉCUPÉRER LES VILLES UNIQUES
+    List<String> getDistinctVillesDepart();
+    List<String> getDistinctVillesArrivee(); // Utilisez "Arrivee" pour la cohérence avec le frontend
 }
-    
