@@ -5,6 +5,7 @@
 
 package PFE.CDSIR_AGENCY.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // <-- N'oubliez pas cet import !
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -93,6 +94,7 @@ public class Vehicule {
 			max = 20,
 			message = "Le statut ne doit pas dépasser 20 caractères"
 	) String statut;
+
 	@ManyToOne(
 			fetch = FetchType.LAZY
 	)
@@ -100,14 +102,17 @@ public class Vehicule {
 			name = "id_agence",
 			nullable = false
 	)
+	@JsonIgnore // <-- AJOUTEZ CETTE LIGNE ICI pour la relation avec Agence
 	private @NotNull(
 			message = "Le véhicule doit être associé à une agence"
 	) Agence agence;
+
 	@OneToMany(
 			mappedBy = "vehicule",
 			cascade = {CascadeType.ALL},
 			orphanRemoval = true
 	)
+	@JsonIgnore // <-- AJOUTEZ CETTE LIGNE ICI pour la relation avec Voyage
 	private List<Voyage> voyages;
 
 	@Generated
