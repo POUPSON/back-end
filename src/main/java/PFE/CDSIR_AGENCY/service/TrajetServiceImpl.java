@@ -30,7 +30,7 @@ public class TrajetServiceImpl implements TrajetService {
     }
 
     @Override
-    @Transactional(readOnly = true) // Ajoutez readOnly = true pour les méthodes de lecture
+    @Transactional(readOnly = true)
     public Optional<Trajet> getTrajetById(Long id) {
         logger.info("Récupération du trajet avec l'ID : {}", id);
         return trajetRepository.findById(id);
@@ -70,7 +70,6 @@ public class TrajetServiceImpl implements TrajetService {
         existingTrajet.setQuartierDepart(trajetDetails.getQuartierDepart());
         existingTrajet.setQuartierDestination(trajetDetails.getQuartierDestination());
         existingTrajet.setStatut(trajetDetails.getStatut());
-        // existingTrajet.setVoyages(trajetDetails.getVoyages()); // <-- Assurez-vous que cette ligne est gérée correctement si vous la décommentez un jour.
 
         Trajet updatedTrajet = trajetRepository.save(existingTrajet);
         logger.info("Trajet avec l'ID {} mis à jour avec succès.", updatedTrajet.getId());
@@ -88,15 +87,26 @@ public class TrajetServiceImpl implements TrajetService {
         logger.info("Trajet avec l'ID {} supprimé avec succès.", id);
     }
 
-    // AJOUTEZ CETTE MÉTHODE : Implémentation de searchTrajets
     @Override
     @Transactional(readOnly = true)
     public List<Trajet> searchTrajets(String villeDepart, String villeDestination) {
         logger.info("Recherche de trajets de {} à {}.", villeDepart, villeDestination);
-        // Vous devrez implémenter la logique de recherche ici.
-        // Par exemple, si vous avez une méthode dans le repository:
-        // return trajetRepository.findByVilleDepartContainingIgnoreCaseAndVilleDestinationContainingIgnoreCase(villeDepart, villeDestination);
-        // Ou si vous voulez juste retourner tous les trajets pour l'instant:
-        return trajetRepository.findAll(); // Ou une logique de recherche réelle
+        // Utilisation de la méthode du repository pour la recherche
+        return trajetRepository.findByVilleDepartContainingIgnoreCaseAndVilleDestinationContainingIgnoreCase(villeDepart, villeDestination);
+    }
+
+    // NOUVELLES IMPLÉMENTATIONS POUR RÉCUPÉRER LES VILLES UNIQUES
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getDistinctVillesDepart() {
+        logger.info("Récupération des villes de départ uniques.");
+        return trajetRepository.findDistinctVilleDepart();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getDistinctVillesArrivee() {
+        logger.info("Récupération des villes d'arrivée uniques.");
+        return trajetRepository.findDistinctVilleArrivee();
     }
 }
