@@ -3,7 +3,7 @@ package PFE.CDSIR_AGENCY.controller.admin;
 import PFE.CDSIR_AGENCY.entity.Trajet;
 import PFE.CDSIR_AGENCY.exception.DuplicateResourceException;
 import PFE.CDSIR_AGENCY.exception.NotFoundException;
-import PFE.CDSIR_AGENCY.exception.GlobalExceptionHandler;
+import PFE.CDSIR_AGENCY.exception.GlobalExceptionHandler; // Importez votre gestionnaire d'exceptions global
 import PFE.CDSIR_AGENCY.service.TrajetService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -41,9 +41,9 @@ public class AdminTrajetController {
         } catch (NotFoundException e) {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
-                e.getMessage(),
-                "/api/admin/trajets/" + id, // <-- URI (String)
-                HttpStatus.NOT_FOUND.value() // <-- Statut (int)
+                "Not Found", // <-- Type d'erreur (String)
+                e.getMessage(), // <-- Message détaillé (String)
+                "/api/admin/trajets/" + id // <-- Path/URI (String)
             );
             return new ResponseEntity(errorDetails, HttpStatus.NOT_FOUND);
         }
@@ -57,9 +57,9 @@ public class AdminTrajetController {
         } catch (DuplicateResourceException e) {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
-                e.getMessage(),
-                "/api/admin/trajets", // <-- URI (String)
-                HttpStatus.CONFLICT.value() // <-- Statut (int)
+                "Conflict", // <-- Type d'erreur (String)
+                e.getMessage(), // <-- Message détaillé (String)
+                "/api/admin/trajets" // <-- Path/URI (String)
             );
             return new ResponseEntity(errorDetails, HttpStatus.CONFLICT);
         }
@@ -73,17 +73,17 @@ public class AdminTrajetController {
         } catch (NotFoundException e) {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
-                e.getMessage(),
-                "/api/admin/trajets/" + id, // <-- URI (String)
-                HttpStatus.NOT_FOUND.value() // <-- Statut (int)
+                "Not Found", // <-- Type d'erreur (String)
+                e.getMessage(), // <-- Message détaillé (String)
+                "/api/admin/trajets/" + id // <-- Path/URI (String)
             );
             return new ResponseEntity(errorDetails, HttpStatus.NOT_FOUND);
         } catch (DuplicateResourceException e) {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
-                e.getMessage(),
-                "/api/admin/trajets/" + id, // <-- URI (String)
-                HttpStatus.CONFLICT.value() // <-- Statut (int)
+                "Conflict", // <-- Type d'erreur (String)
+                e.getMessage(), // <-- Message détaillé (String)
+                "/api/admin/trajets/" + id // <-- Path/URI (String)
             );
             return new ResponseEntity(errorDetails, HttpStatus.CONFLICT);
         }
@@ -97,9 +97,9 @@ public class AdminTrajetController {
         } catch (NotFoundException e) {
             GlobalExceptionHandler.ErrorDetails errorDetails = new GlobalExceptionHandler.ErrorDetails(
                 java.time.LocalDateTime.now(),
-                e.getMessage(),
-                "/api/admin/trajets/" + id, // <-- URI (String)
-                HttpStatus.NOT_FOUND.value() // <-- Statut (int)
+                "Not Found", // <-- Type d'erreur (String)
+                e.getMessage(), // <-- Message détaillé (String)
+                "/api/admin/trajets/" + id // <-- Path/URI (String)
             );
             return new ResponseEntity(errorDetails, HttpStatus.NOT_FOUND);
         }
