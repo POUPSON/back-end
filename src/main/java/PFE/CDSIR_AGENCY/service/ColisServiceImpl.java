@@ -7,11 +7,11 @@ import PFE.CDSIR_AGENCY.entity.Agence;
 import PFE.CDSIR_AGENCY.entity.Client;
 import PFE.CDSIR_AGENCY.entity.Colis;
 import PFE.CDSIR_AGENCY.entity.Colis.ColisStatus;
-import PFE.CDSIR_AGENCY.entity.Voyage; // Importez Voyage
+import PFE.CDSIR_AGENCY.entity.Voyage;
 import PFE.CDSIR_AGENCY.repository.AgenceRepository;
 import PFE.CDSIR_AGENCY.repository.ClientRepository;
 import PFE.CDSIR_AGENCY.repository.ColisRepository;
-import PFE.CDSIR_AGENCY.repository.VoyageRepository; // Importez VoyageRepository
+import PFE.CDSIR_AGENCY.repository.VoyageRepository;
 import PFE.CDSIR_AGENCY.service.ColisService;
 import PFE.CDSIR_AGENCY.util.TrackingNumberGenerator;
 
@@ -29,16 +29,16 @@ public class ColisServiceImpl implements ColisService {
     private final ColisRepository colisRepository;
     private final AgenceRepository agenceRepository;
     private final ClientRepository clientRepository;
-    private final VoyageRepository voyageRepository; // Injectez VoyageRepository
+    private final VoyageRepository voyageRepository;
 
     public ColisServiceImpl(ColisRepository colisRepository,
                             AgenceRepository agenceRepository,
                             ClientRepository clientRepository,
-                            VoyageRepository voyageRepository) { // Ajoutez VoyageRepository au constructeur
+                            VoyageRepository voyageRepository) {
         this.colisRepository = colisRepository;
         this.agenceRepository = agenceRepository;
         this.clientRepository = clientRepository;
-        this.voyageRepository = voyageRepository; // Initialisez-le
+        this.voyageRepository = voyageRepository;
     }
 
     @Override
@@ -46,12 +46,10 @@ public class ColisServiceImpl implements ColisService {
     public ColisResponseDto deposerColis(ColisRequestDto colisRequestDto) {
         Colis colis = new Colis();
 
-        // 1. Récupérer l'agence via agenceId du DTO
         Agence agence = agenceRepository.findById(colisRequestDto.getAgenceId())
                 .orElseThrow(() -> new RuntimeException("Agence non trouvée avec l'ID: " + colisRequestDto.getAgenceId()));
         colis.setAgence(agence);
 
-        // 2. Gérer le client expéditeur (optionnel, basé sur clientId si fourni)
         Client clientExpediteur = null;
         if (colisRequestDto.getClientId() != null) {
             clientExpediteur = clientRepository.findById(colisRequestDto.getClientId())
@@ -59,7 +57,6 @@ public class ColisServiceImpl implements ColisService {
         }
         colis.setClientExpediteur(clientExpediteur);
 
-        // 3. Mapper les données du DTO de requête vers l'entité Colis
         colis.setDescription(colisRequestDto.getDescription());
         colis.setWeight(colisRequestDto.getWeight());
         colis.setDimensions(colisRequestDto.getDimensions());
@@ -80,7 +77,6 @@ public class ColisServiceImpl implements ColisService {
         colis.setModePaiement(colisRequestDto.getModePaiement());
         colis.setReferencePaiement(colisRequestDto.getPaymentReference());
 
-        // Dates et statuts automatiques
         colis.setDateEnregistrement(LocalDateTime.now());
         colis.setStatut(ColisStatus.ENREGISTRE);
         colis.setTrackingNumber(TrackingNumberGenerator.generateTrackingNumber());
@@ -93,12 +89,11 @@ public class ColisServiceImpl implements ColisService {
         return convertToDto(savedColis);
     }
 
-    // --- MISE À JOUR MAJEURE ICI : convertToDto ---
     @Override
     public ColisResponseDto convertToDto(Colis colis) {
         ColisResponseDto dto = new ColisResponseDto();
 
-        dto.setIdColis(colis.getId()); // Assurez-vous que votre entité Colis a bien un getId() pour l'ID
+        dto.setIdColis(colis.getId());
         dto.setDescription(colis.getDescription());
         dto.setWeight(colis.getWeight());
         dto.setDimensions(colis.getDimensions());
@@ -111,49 +106,46 @@ public class ColisServiceImpl implements ColisService {
         dto.setDateLivraisonPrevue(colis.getDateLivraisonPrevue());
         dto.setDateLivraisonReelle(colis.getDateLivraisonReelle());
 
-        // Informations du client expéditeur
         if (colis.getClientExpediteur() != null) {
             dto.setClientId(colis.getClientExpediteur().getId());
-            // Vous pourriez aussi ajouter le nom du client si nécessaire:
-            // dto.setClientName(colis.getClientExpediteur().getNom()); // Assurez-vous d'avoir ce champ dans ClientResponseDto si vous voulez le renvoyer
         }
 
-        // Informations de l'expéditeur (peuvent être différentes du client si dépôt public)
         dto.setSenderName(colis.getNomExpediteur());
         dto.setSenderPhone(colis.getTelephoneExpediteur());
         dto.setSenderEmail(colis.getEmailExpediteur());
         dto.setVilleOrigine(colis.getVilleOrigine());
         dto.setQuartierExpedition(colis.getQuartierExpedition());
 
-        // Informations du destinataire
         dto.setNomDestinataire(colis.getNomDestinataire());
         dto.setNumeroDestinataire(colis.getNumeroDestinataire());
         dto.setEmailDestinataire(colis.getEmailDestinataire());
         dto.setVilleDeDestination(colis.getVilleDeDestination());
         dto.setQuartierDestination(colis.getQuartierDestination());
 
-        // Informations de paiement
         dto.setModePaiement(colis.getModePaiement());
         dto.setPaymentReference(colis.getReferencePaiement());
         dto.setCodeValidation(colis.getCodeValidation());
 
-        // Informations de l'agence d'origine
+        // --- CORRECTION HERE ---
         if (colis.getAgence() != null) {
             dto.setAgenceId(colis.getAgence().getId());
-            dto.setAgenceNom(colis.getAgence().getNom()); // Assurez-vous que l'entité Agence a un champ 'nom'
+            // Corrected from getNom() to getNomAgence()
+            dto.setAgenceNom(colis.getAgence().getNomAgence());
         }
+        // --- END CORRECTION ---
 
-        // Informations du voyage assigné (si un voyage est assigné)
         if (colis.getAssignedVoyage() != null) {
             dto.setAssignedVoyageId(colis.getAssignedVoyage().getId());
-            dto.setAssignedVoyageDescription(colis.getAssignedVoyage().getDescription()); // Assurez-vous d'avoir une description dans votre entité Voyage
-            dto.setAssignedVoyageVehiculeImmatriculation(colis.getAssignedVoyage().getVehicule().getImmatriculation()); // Assurez-vous que Voyage a un véhicule et que Véhicule a une immatriculation
+            // This assumes you added 'description' to your Voyage entity as discussed.
+            dto.setAssignedVoyageDescription(colis.getAssignedVoyage().getDescription());
+            if (colis.getAssignedVoyage().getVehicule() != null) {
+                dto.setAssignedVoyageVehiculeImmatriculation(colis.getAssignedVoyage().getVehicule().getImmatriculation());
+            }
         }
 
         return dto;
     }
 
-    // --- Vos autres implémentations de méthodes existantes (sans changement) ---
     @Override
     public Optional<Colis> getColisByTrackingNumber(String trackingNumber) {
         return colisRepository.findByTrackingNumber(trackingNumber);
@@ -168,6 +160,4 @@ public class ColisServiceImpl implements ColisService {
     public List<Colis> searchColis(String keyword) {
         return colisRepository.searchByTrackingNumberOrNames(keyword);
     }
-
-    // ... (autres méthodes du service si elles existent)
 }
