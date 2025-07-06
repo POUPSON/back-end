@@ -94,7 +94,7 @@ public class TrajetServiceImpl implements TrajetService {
         logger.info("Recherche de trajets de {} à {}.", villeDepart, villeDestination);
         // Vous devez utiliser la méthode de recherche appropriée du repository ici.
         // Par exemple:
-        return trajetRepository.findByVilleDepartAndVilleDestination(villeDepart, villeDestination);
+        return trajetRepository.findByVilleDepartContainingIgnoreCaseAndVilleDestinationContainingIgnoreCase(villeDepart, villeDestination);
         // Ou une recherche plus flexible si nécessaire:
         // return trajetRepository.findByVilleDepartContainingIgnoreCaseAndVilleDestinationContainingIgnoreCase(villeDepart, villeDestination);
     }
