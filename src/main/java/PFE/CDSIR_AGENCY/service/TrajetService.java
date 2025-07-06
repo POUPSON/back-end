@@ -19,8 +19,11 @@ public interface TrajetService {
 	Trajet updateTrajet(Long id, Trajet trajetDetails);
 
 	void deleteTrajet(Long id);
-// AJOUTEZ CETTE LIGNE : Déclaration de la méthode searchTrajets
+
+    // Déclaration de la méthode searchTrajets (déjà présente dans votre code)
     List<Trajet> searchTrajets(String villeDepart, String villeDestination);
 
+    // --- NOUVELLES DÉCLARATIONS À AJOUTER ---
+    List<String> getDistinctVillesDepart();
+    List<String> getDistinctVillesArrivee();
 }
-    
