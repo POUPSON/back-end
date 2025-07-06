@@ -44,6 +44,26 @@ public class TrajetController {
 		return trajets.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(trajets);
 	}
 
+
+
+
+    @GetMapping("/villes-depart") // Mappe à /api/trajets/villes-depart
+    @PreAuthorize("permitAll()") // Assurez-vous que cette route est accessible sans authentification
+    public ResponseEntity<List<String>> getVillesDepart() {
+        List<String> villesDepart = this.trajetService.getDistinctVillesDepart();
+        return ResponseEntity.ok(villesDepart);
+    }
+
+    @GetMapping("/villes-arrivee") // Mappe à /api/trajets/villes-arrivee
+    @PreAuthorize("permitAll()") // Assurez-vous que cette route est accessible sans authentification
+    public ResponseEntity<List<String>> getVillesArrivee() {
+        List<String> villesArrivee = this.trajetService.getDistinctVillesArrivee();
+        return ResponseEntity.ok(villesArrivee);
+    }
+
+
+
+	
 	@Generated
 	public TrajetController(final TrajetService trajetService) {
 		this.trajetService = trajetService;
