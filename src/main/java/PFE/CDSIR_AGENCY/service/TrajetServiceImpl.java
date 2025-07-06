@@ -3,7 +3,7 @@ package PFE.CDSIR_AGENCY.service.impl;
 import PFE.CDSIR_AGENCY.entity.Trajet;
 import PFE.CDSIR_AGENCY.exception.DuplicateResourceException;
 import PFE.CDSIR_AGENCY.exception.NotFoundException;
-import PFE.CDSIR_AGENCY.repository.TrajetRepository;
+import PFE.CDSIR_AGENCY.repository.TrajetRepository; // Assurez-vous que le repository est importé
 import PFE.CDSIR_AGENCY.service.TrajetService;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +30,7 @@ public class TrajetServiceImpl implements TrajetService {
     }
 
     @Override
-    @Transactional(readOnly = true) // Ajoutez readOnly = true pour les méthodes de lecture
+    @Transactional(readOnly = true)
     public Optional<Trajet> getTrajetById(Long id) {
         logger.info("Récupération du trajet avec l'ID : {}", id);
         return trajetRepository.findById(id);
@@ -88,15 +88,30 @@ public class TrajetServiceImpl implements TrajetService {
         logger.info("Trajet avec l'ID {} supprimé avec succès.", id);
     }
 
-    // AJOUTEZ CETTE MÉTHODE : Implémentation de searchTrajets
     @Override
     @Transactional(readOnly = true)
     public List<Trajet> searchTrajets(String villeDepart, String villeDestination) {
         logger.info("Recherche de trajets de {} à {}.", villeDepart, villeDestination);
-        // Vous devrez implémenter la logique de recherche ici.
-        // Par exemple, si vous avez une méthode dans le repository:
+        // Vous devez utiliser la méthode de recherche appropriée du repository ici.
+        // Par exemple:
+        return trajetRepository.findByVilleDepartAndVilleDestination(villeDepart, villeDestination);
+        // Ou une recherche plus flexible si nécessaire:
         // return trajetRepository.findByVilleDepartContainingIgnoreCaseAndVilleDestinationContainingIgnoreCase(villeDepart, villeDestination);
-        // Ou si vous voulez juste retourner tous les trajets pour l'instant:
-        return trajetRepository.findAll(); // Ou une logique de recherche réelle
+    }
+
+    // --- NOUVELLES MÉTHODES À IMPLÉMENTER POUR RÉCUPÉRER LES VILLES UNIQUES ---
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getDistinctVillesDepart() {
+        logger.info("Récupération des villes de départ uniques.");
+        return trajetRepository.findDistinctVilleDepart(); // Appelle la méthode du repository
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getDistinctVillesArrivee() {
+        logger.info("Récupération des villes d'arrivée uniques.");
+        return trajetRepository.findDistinctVilleArrivee(); // Appelle la méthode du repository
     }
 }
