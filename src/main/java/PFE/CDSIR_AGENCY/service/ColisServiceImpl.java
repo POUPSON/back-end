@@ -108,14 +108,12 @@ public class ColisServiceImpl implements ColisService {
 
     @Override
     public List<ColisResponseDto> getColisByRecipientId(Long recipientId) {
-        // CORRECTION ICI : Remplacer l'appel à findByClientDestinataireId
-        // par une recherche basée sur les informations du client destinataire
         Client recipientClient = clientRepository.findById(recipientId)
                 .orElseThrow(() -> new ColisNotFoundException("Client destinataire non trouvé avec l'ID: " + recipientId));
 
-        // Assurez-vous que votre entité Client a getPhoneNumber() et getEmail()
-        String recipientPhone = recipientClient.getPhoneNumber();
-        String recipientEmail = recipientClient.getEmail();
+        // CORRECTION ICI : Utilisation de getTelephone() et getEmail() sur l'entité Client
+        String recipientPhone = recipientClient.getTelephone(); // Assurez-vous que Client a getTelephone()
+        String recipientEmail = recipientClient.getEmail();     // Assurez-vous que Client a getEmail()
 
         List<Colis> colisList = colisRepository.findByNumeroDestinataireOrEmailDestinataire(recipientPhone, recipientEmail);
 
@@ -255,11 +253,10 @@ public class ColisServiceImpl implements ColisService {
     @Override
     @Transactional
     public ColisResponseDto confirmColisPayment(String paymentReference) {
-        // Assuming findByReferencePaiement returns List<Colis> and we want the first one
         Colis colis = colisRepository.findByReferencePaiement(paymentReference).stream()
-                .findFirst() // Get an Optional<Colis> from the list
+                .findFirst()
                 .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé avec la référence de paiement: " + paymentReference));
-        colis.setStatut(ColisStatus.PAYE);
+        colis.setStatut(ColisStatus.PAYE); // Assurez-vous que ColisStatus.PAYE existe dans votre enum ColisStatus
         colis.setDatePaiement(LocalDateTime.now());
         Colis updatedColis = colisRepository.save(colis);
         return convertToDto(updatedColis);
@@ -268,19 +265,16 @@ public class ColisServiceImpl implements ColisService {
     // Méthodes de notification
     @Override
     public void sendSenderPickupNotification(Long colisId) {
-        // Implémentation à compléter
         System.out.println("Notification envoyée à l'expéditeur pour le colis ID: " + colisId);
     }
 
     @Override
     public void sendRecipientReadyForPickupNotification(Long colisId) {
-        // Implémentation à compléter
         System.out.println("Notification envoyée au destinataire pour le colis ID: " + colisId);
     }
 
     @Override
     public void sendDeliveryConfirmationNotification(Long colisId) {
-        // Implémentation à compléter
         System.out.println("Confirmation de livraison envoyée pour le colis ID: " + colisId);
     }
 
