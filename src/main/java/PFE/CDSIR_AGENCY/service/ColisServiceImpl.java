@@ -2,28 +2,22 @@ package PFE.CDSIR_AGENCY.service.impl;
 
 import PFE.CDSIR_AGENCY.dto.ColisRequestDto;
 import PFE.CDSIR_AGENCY.dto.ColisResponseDto;
-import PFE.CDSIR_AGENCY.entity.Agence;
-import PFE.CDSIR_AGENCY.entity.Client;
-import PFE.CDSIR_AGENCY.entity.Colis;
+import PFE.CDSIR_AGENCY.entity.*;
 import PFE.CDSIR_AGENCY.entity.Colis.ColisStatus;
-import PFE.CDSIR_AGENCY.entity.Voyage;
+import PFE.CDSIR_AGENCY.exception.ColisNotFoundException;
 import PFE.CDSIR_AGENCY.exception.OperationNotAllowedException;
-import PFE.CDSIR_AGENCY.repository.AgenceRepository;
-import PFE.CDSIR_AGENCY.repository.ClientRepository;
-import PFE.CDSIR_AGENCY.repository.ColisRepository;
-import PFE.CDSIR_AGENCY.repository.VoyageRepository;
+import PFE.CDSIR_AGENCY.repository.*;
 import PFE.CDSIR_AGENCY.service.ColisService;
-import PFE.CDSIR_AGENCY.util.TrackingNumberGenerator; // Assurez-vous que cette classe existe et est correcte
-
+import PFE.CDSIR_AGENCY.util.TrackingNumberGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter; // Import ajouté pour le parsing de date
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors; // Import pour Stream API
+import java.util.stream.Collectors;
 
 @Service
 public class ColisServiceImpl implements ColisService {
@@ -32,13 +26,7 @@ public class ColisServiceImpl implements ColisService {
     private final AgenceRepository agenceRepository;
     private final ClientRepository clientRepository;
     private final VoyageRepository voyageRepository;
-
-    // Définir un formateur de date/heure si vos dates sont des chaînes spécifiques
-    // Exemple: "yyyy-MM-dd HH:mm:ss" ou "yyyy-MM-dd'T'HH:mm:ss"
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-    // Ajustez le format si vos chaînes de date sont différentes.
-    // Par exemple, si c'est juste une date "yyyy-MM-dd", utilisez DateTimeFormatter.ISO_LOCAL_DATE
-    // et convertissez en LocalDateTime.of(LocalDate.parse(dateString), LocalTime.MIDNIGHT)
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public ColisServiceImpl(ColisRepository colisRepository,
                             AgenceRepository agenceRepository,
@@ -50,11 +38,287 @@ public class ColisServiceImpl implements ColisService {
         this.voyageRepository = voyageRepository;
     }
 
-    // Méthode utilitaire pour convertir Colis en ColisResponseDto
-    // Pas un @Override car elle n'est pas dans l'interface
-    public ColisResponseDto convertToDto(Colis colis) {
-        ColisResponseDto dto = new ColisResponseDto();
+    // Méthodes principales
+    @Override
+    @Transactional
+    public ColisResponseDto createColis(ColisRequestDto colisRequestDto) {
+        Colis colis = mapRequestDtoToEntity(colisRequestDto);
+        colis.setTrackingNumber(TrackingNumberGenerator.generateTrackingNumber());
+        colis.setDateEnregistrement(LocalDateTime.now());
+        colis.setStatut(ColisStatus.ENREGISTRE);
+        Colis savedColis = colisRepository.save(colis);
+        return convertToDto(savedColis);
+    }
 
+    @Override
+    @Transactional
+    public ColisResponseDto createColisForClient(Long clientId, ColisRequestDto colisRequestDto) {
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ColisNotFoundException("Client non trouvé avec l'ID: " + clientId));
+        Colis colis = mapRequestDtoToEntity(colisRequestDto);
+        colis.setClientExpediteur(client);
+        colis.setTrackingNumber(TrackingNumberGenerator.generateTrackingNumber());
+        colis.setDateEnregistrement(LocalDateTime.now());
+        colis.setStatut(ColisStatus.ENREGISTRE);
+        Colis savedColis = colisRepository.save(colis);
+        return convertToDto(savedColis);
+    }
+
+    @Override
+    public ColisResponseDto getColisById(Long id) {
+        Colis colis = colisRepository.findById(id)
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé avec l'ID: " + id));
+        return convertToDto(colis);
+    }
+
+    @Override
+    public ColisResponseDto getColisByIdAndClientId(Long colisId, Long clientId) {
+        Colis colis = colisRepository.findByIdAndClientExpediteurId(colisId, clientId)
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé pour le client ID: " + clientId));
+        return convertToDto(colis);
+    }
+
+    @Override
+    public List<ColisResponseDto> getAllColis() {
+        List<Colis> colisList = colisRepository.findAll();
+        if (colisList.isEmpty()) {
+            throw new ColisNotFoundException("Aucun colis trouvé dans la base de données");
+        }
+        return colisList.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ColisResponseDto> getColisBySenderId(Long senderId) {
+        List<Colis> colisList = colisRepository.findByClientExpediteurId(senderId);
+        if (colisList.isEmpty()) {
+            throw new ColisNotFoundException("Aucun colis trouvé pour l'expéditeur ID: " + senderId);
+        }
+        return colisList.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ColisResponseDto> getColisByRecipientId(Long recipientId) {
+        List<Colis> colisList = colisRepository.findByClientDestinataireId(recipientId);
+        if (colisList.isEmpty()) {
+            throw new ColisNotFoundException("Aucun colis trouvé pour le destinataire ID: " + recipientId);
+        }
+        return colisList.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public ColisResponseDto updateColis(Long id, ColisRequestDto colisRequestDto) {
+        Colis existingColis = colisRepository.findById(id)
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé avec l'ID: " + id));
+        updateColisFromDto(existingColis, colisRequestDto);
+        Colis updatedColis = colisRepository.save(existingColis);
+        return convertToDto(updatedColis);
+    }
+
+    @Override
+    @Transactional
+    public ColisResponseDto updateColisForClient(Long colisId, Long clientId, ColisRequestDto colisRequestDto) {
+        Colis existingColis = colisRepository.findByIdAndClientExpediteurId(colisId, clientId)
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé pour le client ID: " + clientId));
+        updateColisFromDto(existingColis, colisRequestDto);
+        Colis updatedColis = colisRepository.save(existingColis);
+        return convertToDto(updatedColis);
+    }
+
+    @Override
+    @Transactional
+    public void deleteColis(Long id) {
+        if (!colisRepository.existsById(id)) {
+            throw new ColisNotFoundException("Colis non trouvé avec l'ID: " + id);
+        }
+        colisRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void cancelColisForClient(Long colisId, Long clientId) {
+        Colis colis = colisRepository.findByIdAndClientExpediteurId(colisId, clientId)
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé pour le client ID: " + clientId));
+        colis.setStatut(ColisStatus.ANNULE);
+        colisRepository.save(colis);
+    }
+
+    @Override
+    public ColisResponseDto getColisByTrackingNumber(String trackingNumber) {
+        Colis colis = colisRepository.findByTrackingNumber(trackingNumber)
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé avec le numéro de suivi: " + trackingNumber));
+        return convertToDto(colis);
+    }
+
+    @Override
+    @Transactional
+    public ColisResponseDto assignColisToVoyage(Long colisId, Long voyageId) {
+        Colis colis = colisRepository.findById(colisId)
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé avec l'ID: " + colisId));
+        Voyage voyage = voyageRepository.findById(voyageId)
+                .orElseThrow(() -> new ColisNotFoundException("Voyage non trouvé avec l'ID: " + voyageId));
+        colis.setAssignedVoyage(voyage);
+        colis.setStatut(ColisStatus.EXPEDIE);
+        Colis updatedColis = colisRepository.save(colis);
+        return convertToDto(updatedColis);
+    }
+
+    @Override
+    @Transactional
+    public ColisResponseDto updateColisStatus(Long colisId, String newStatus) {
+        Colis colis = colisRepository.findById(colisId)
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé avec l'ID: " + colisId));
+        colis.setStatut(ColisStatus.valueOf(newStatus));
+        Colis updatedColis = colisRepository.save(colis);
+        return convertToDto(updatedColis);
+    }
+
+    @Override
+    public List<ColisResponseDto> getColisByStatus(String status) {
+        List<Colis> colisList = colisRepository.findByStatut(ColisStatus.valueOf(status));
+        if (colisList.isEmpty()) {
+            throw new ColisNotFoundException("Aucun colis trouvé avec le statut: " + status);
+        }
+        return colisList.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ColisResponseDto> getColisByVoyageId(Long voyageId) {
+        List<Colis> colisList = colisRepository.findByAssignedVoyageId(voyageId);
+        if (colisList.isEmpty()) {
+            throw new ColisNotFoundException("Aucun colis trouvé pour le voyage ID: " + voyageId);
+        }
+        return colisList.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void verifyColisOwnership(Long colisId, Long clientId) throws OperationNotAllowedException {
+        if (!colisRepository.existsByIdAndClientExpediteurId(colisId, clientId)) {
+            throw new OperationNotAllowedException("Le client ID " + clientId + " ne possède pas le colis ID " + colisId);
+        }
+    }
+
+    @Override
+    public List<ColisResponseDto> searchColis(String keyword) {
+        List<Colis> colisList = colisRepository.searchByTrackingNumberOrNames(keyword);
+        if (colisList.isEmpty()) {
+            throw new ColisNotFoundException("Aucun colis trouvé avec le critère: " + keyword);
+        }
+        return colisList.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public ColisResponseDto updateColisDeliveryDate(Long colisId, String newDeliveryDate) {
+        Colis colis = colisRepository.findById(colisId)
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé avec l'ID: " + colisId));
+
+        try {
+            LocalDateTime deliveryDate = LocalDateTime.parse(newDeliveryDate, DATE_FORMATTER);
+            colis.setDateLivraisonPrevue(deliveryDate);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Format de date invalide. Utilisez le format: yyyy-MM-dd HH:mm");
+        }
+
+        Colis updatedColis = colisRepository.save(colis);
+        return convertToDto(updatedColis);
+    }
+
+    @Override
+    @Transactional
+    public ColisResponseDto confirmColisPayment(String paymentReference) {
+        // Corrected line 243 (or near there, depending on exact formatting)
+        // Assuming findByReferencePaiement returns List<Colis> and we want the first one
+        Colis colis = colisRepository.findByReferencePaiement(paymentReference).stream()
+                .findFirst() // Get an Optional<Colis> from the list
+                .orElseThrow(() -> new ColisNotFoundException("Colis non trouvé avec la référence de paiement: " + paymentReference));
+        colis.setStatut(ColisStatus.PAYE);
+        colis.setDatePaiement(LocalDateTime.now());
+        Colis updatedColis = colisRepository.save(colis);
+        return convertToDto(updatedColis);
+    }
+
+    // Méthodes de notification
+    @Override
+    public void sendSenderPickupNotification(Long colisId) {
+        // Implémentation à compléter
+        System.out.println("Notification envoyée à l'expéditeur pour le colis ID: " + colisId);
+    }
+
+    @Override
+    public void sendRecipientReadyForPickupNotification(Long colisId) {
+        // Implémentation à compléter
+        System.out.println("Notification envoyée au destinataire pour le colis ID: " + colisId);
+    }
+
+    @Override
+    public void sendDeliveryConfirmationNotification(Long colisId) {
+        // Implémentation à compléter
+        System.out.println("Confirmation de livraison envoyée pour le colis ID: " + colisId);
+    }
+
+    // Méthodes utilitaires
+    private Colis mapRequestDtoToEntity(ColisRequestDto dto) {
+        Colis colis = new Colis();
+        colis.setDescription(dto.getDescription());
+        colis.setWeight(dto.getWeight());
+        colis.setDimensions(dto.getDimensions());
+        colis.setEstimatedCost(dto.getEstimatedCost());
+        colis.setNomExpediteur(dto.getSenderName());
+        colis.setTelephoneExpediteur(dto.getSenderPhone());
+        colis.setEmailExpediteur(dto.getSenderEmail());
+        colis.setVilleOrigine(dto.getOriginCity());
+        colis.setQuartierExpedition(dto.getOriginNeighborhood());
+        colis.setNomDestinataire(dto.getReceiverName());
+        colis.setNumeroDestinataire(dto.getReceiverPhone());
+        colis.setEmailDestinataire(dto.getReceiverEmail());
+        colis.setVilleDeDestination(dto.getDestinationCity());
+        colis.setQuartierDestination(dto.getDestinationNeighborhood());
+        colis.setModePaiement(dto.getModePaiement());
+        colis.setReferencePaiement(dto.getPaymentReference());
+
+        if (dto.getAgenceId() != null) {
+            Agence agence = agenceRepository.findById(dto.getAgenceId())
+                    .orElseThrow(() -> new ColisNotFoundException("Agence non trouvée avec l'ID: " + dto.getAgenceId()));
+            colis.setAgence(agence);
+        }
+
+        return colis;
+    }
+
+    private void updateColisFromDto(Colis colis, ColisRequestDto dto) {
+        if (dto.getDescription() != null) colis.setDescription(dto.getDescription());
+        if (dto.getWeight() != null) colis.setWeight(dto.getWeight());
+        if (dto.getDimensions() != null) colis.setDimensions(dto.getDimensions());
+        if (dto.getEstimatedCost() != null) colis.setEstimatedCost(dto.getEstimatedCost());
+        if (dto.getSenderName() != null) colis.setNomExpediteur(dto.getSenderName());
+        if (dto.getSenderPhone() != null) colis.setTelephoneExpediteur(dto.getSenderPhone());
+        if (dto.getSenderEmail() != null) colis.setEmailExpediteur(dto.getSenderEmail());
+        if (dto.getOriginCity() != null) colis.setVilleOrigine(dto.getOriginCity());
+        if (dto.getOriginNeighborhood() != null) colis.setQuartierExpedition(dto.getOriginNeighborhood());
+        if (dto.getReceiverName() != null) colis.setNomDestinataire(dto.getReceiverName());
+        if (dto.getReceiverPhone() != null) colis.setNumeroDestinataire(dto.getReceiverPhone());
+        if (dto.getReceiverEmail() != null) colis.setEmailDestinataire(dto.getReceiverEmail());
+        if (dto.getDestinationCity() != null) colis.setVilleDeDestination(dto.getDestinationCity());
+        if (dto.getDestinationNeighborhood() != null) colis.setQuartierDestination(dto.getDestinationNeighborhood());
+        if (dto.getModePaiement() != null) colis.setModePaiement(dto.getModePaiement());
+        if (dto.getPaymentReference() != null) colis.setReferencePaiement(dto.getPaymentReference());
+    }
+
+    private ColisResponseDto convertToDto(Colis colis) {
+        ColisResponseDto dto = new ColisResponseDto();
         dto.setIdColis(colis.getId());
         dto.setDescription(colis.getDescription());
         dto.setWeight(colis.getWeight());
@@ -65,25 +329,19 @@ public class ColisServiceImpl implements ColisService {
         dto.setDateEnregistrement(colis.getDateEnregistrement());
         dto.setDateExpedition(colis.getDateExpedition());
         dto.setDateArriveeAgenceDestination(colis.getDateArriveeAgenceDestination());
+        // Ligne corrigée : Passe directement le LocalDateTime
         dto.setDateLivraisonPrevue(colis.getDateLivraisonPrevue());
         dto.setDateLivraisonReelle(colis.getDateLivraisonReelle());
-
-        if (colis.getClientExpediteur() != null) {
-            dto.setClientId(colis.getClientExpediteur().getId());
-        }
-
         dto.setSenderName(colis.getNomExpediteur());
-        dto.setTelephoneExpediteur(colis.getTelephoneExpediteur());
-        dto.setEmailExpediteur(colis.getEmailExpediteur());
+        dto.setSenderPhone(colis.getTelephoneExpediteur());
+        dto.setSenderEmail(colis.getEmailExpediteur());
         dto.setVilleOrigine(colis.getVilleOrigine());
         dto.setQuartierExpedition(colis.getQuartierExpedition());
-
         dto.setNomDestinataire(colis.getNomDestinataire());
         dto.setNumeroDestinataire(colis.getNumeroDestinataire());
         dto.setEmailDestinataire(colis.getEmailDestinataire());
         dto.setVilleDeDestination(colis.getVilleDeDestination());
         dto.setQuartierDestination(colis.getQuartierDestination());
-
         dto.setModePaiement(colis.getModePaiement());
         dto.setPaymentReference(colis.getReferencePaiement());
         dto.setCodeValidation(colis.getCodeValidation());
@@ -102,318 +360,5 @@ public class ColisServiceImpl implements ColisService {
         }
 
         return dto;
-    }
-
-    // Implémentation de createColis (anciennement deposerColis)
-    @Override
-    @Transactional
-    public ColisResponseDto createColis(ColisRequestDto colisRequestDto) {
-        Colis colis = new Colis();
-
-        Agence agence = agenceRepository.findById(colisRequestDto.getAgenceId())
-                .orElseThrow(() -> new RuntimeException("Agence non trouvée avec l'ID: " + colisRequestDto.getAgenceId()));
-        colis.setAgence(agence);
-
-        Client clientExpediteur = null;
-        if (colisRequestDto.getClientId() != null) {
-            clientExpediteur = clientRepository.findById(colisRequestDto.getClientId())
-                    .orElseThrow(() -> new RuntimeException("Client non trouvé avec l'ID: " + colisRequestDto.getClientId()));
-        }
-        colis.setClientExpediteur(clientExpediteur);
-
-        colis.setDescription(colisRequestDto.getDescription());
-        colis.setWeight(colisRequestDto.getWeight());
-        colis.setDimensions(colisRequestDto.getDimensions());
-        colis.setEstimatedCost(colisRequestDto.getEstimatedCost());
-
-        colis.setNomExpediteur(colisRequestDto.getSenderName());
-        colis.setTelephoneExpediteur(colisRequestDto.getSenderPhone());
-        colis.setEmailExpediteur(colisRequestDto.getSenderEmail());
-        colis.setVilleOrigine(colisRequestDto.getOriginCity());
-        colis.setQuartierExpedition(colisRequestDto.getOriginNeighborhood());
-
-        colis.setNomDestinataire(colisRequestDto.getReceiverName());
-        colis.setNumeroDestinataire(colisRequestDto.getReceiverPhone());
-        colis.setEmailDestinataire(colisRequestDto.getReceiverEmail());
-        colis.setVilleDeDestination(colisRequestDto.getDestinationCity());
-        colis.setQuartierDestination(colisRequestDto.getDestinationNeighborhood());
-
-        colis.setModePaiement(colisRequestDto.getModePaiement());
-        colis.setReferencePaiement(colisRequestDto.getPaymentReference());
-
-        colis.setDateEnregistrement(LocalDateTime.now());
-        colis.setStatut(ColisStatus.ENREGISTRE);
-        colis.setTrackingNumber(TrackingNumberGenerator.generateTrackingNumber());
-        
-        // Correction de l'incompatibilité de type pour plannedDeliveryDate
-        if (colisRequestDto.getPlannedDeliveryDate() != null) {
-            colis.setDateLivraisonPrevue(LocalDateTime.parse(colisRequestDto.getPlannedDeliveryDate(), DATE_TIME_FORMATTER));
-        }
-
-
-        colis.setCodeValidation(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-
-        Colis savedColis = colisRepository.save(colis);
-
-        return convertToDto(savedColis);
-    }
-
-    @Override
-    public ColisResponseDto createColisForClient(Long clientId, ColisRequestDto colisRequestDto) {
-        // Implémentation de base, à compléter selon votre logique métier
-        // Assurez-vous que le clientId correspond au clientExpediteur
-        colisRequestDto.setClientId(clientId);
-        return createColis(colisRequestDto);
-    }
-
-    @Override
-    public ColisResponseDto getColisById(Long id) {
-        return colisRepository.findById(id)
-                .map(this::convertToDto)
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé avec l'ID: " + id));
-    }
-
-    @Override
-    public ColisResponseDto getColisByIdAndClientId(Long colisId, Long clientId) {
-        return colisRepository.findById(colisId)
-                .filter(colis -> colis.getClientExpediteur() != null && colis.getClientExpediteur().getId().equals(clientId))
-                .map(this::convertToDto)
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé ou non associé à ce client: " + colisId));
-    }
-
-    @Override
-    public List<ColisResponseDto> getAllColis() {
-        return colisRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ColisResponseDto> getColisBySenderId(Long senderId) {
-        return colisRepository.findByClientExpediteurId(senderId).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ColisResponseDto> getColisByRecipientId(Long recipientId) {
-        // Cette méthode nécessite d'abord de trouver le client destinataire par son ID
-        // et ensuite de chercher les colis où ce client est le destinataire.
-        // Si vous n'avez pas de relation directe 'ClientDestinataire' sur Colis,
-        // vous devrez peut-être ajuster votre entité Colis ou la logique de recherche.
-        // Pour l'instant, je vais simuler une recherche par numéro de téléphone du destinataire
-        // si l'ID du destinataire est en fait un ID de client enregistré.
-        // Ou si 'recipientId' est l'ID d'un client, vous devriez avoir une relation.
-        // Pour l'exemple, je vais retourner une liste vide ou vous pouvez adapter.
-        return colisRepository.findAll().stream() // Exemple: à remplacer par une vraie requête
-                .filter(colis -> colis.getNumeroDestinataire() != null && colis.getNumeroDestinataire().equals(String.valueOf(recipientId))) // Exemple de filtre
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional
-    public ColisResponseDto updateColis(Long id, ColisRequestDto colisRequestDto) {
-        Colis existingColis = colisRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé avec l'ID: " + id));
-
-        // Mettre à jour les champs nécessaires
-        existingColis.setDescription(colisRequestDto.getDescription());
-        existingColis.setWeight(colisRequestDto.getWeight());
-        existingColis.setDimensions(colisRequestDto.getDimensions());
-        existingColis.setEstimatedCost(colisRequestDto.getEstimatedCost());
-        existingColis.setNomExpediteur(colisRequestDto.getSenderName());
-        existingColis.setTelephoneExpediteur(colisRequestDto.getSenderPhone());
-        existingColis.setEmailExpediteur(colisRequestDto.getSenderEmail());
-        existingColis.setVilleOrigine(colisRequestDto.getOriginCity());
-        existingColis.setQuartierExpedition(colisRequestDto.getOriginNeighborhood());
-        existingColis.setNomDestinataire(colisRequestDto.getReceiverName());
-        existingColis.setNumeroDestinataire(colisRequestDto.getReceiverPhone());
-        existingColis.setEmailDestinataire(colisRequestDto.getReceiverEmail());
-        existingColis.setVilleDeDestination(colisRequestDto.getDestinationCity());
-        existingColis.setQuartierDestination(colisRequestDto.getDestinationNeighborhood());
-        existingColis.setModePaiement(colisRequestDto.getModePaiement());
-        existingColis.setReferencePaiement(colisRequestDto.getPaymentReference());
-        
-        // Correction de l'incompatibilité de type pour plannedDeliveryDate
-        if (colisRequestDto.getPlannedDeliveryDate() != null) {
-            existingColis.setDateLivraisonPrevue(LocalDateTime.parse(colisRequestDto.getPlannedDeliveryDate(), DATE_TIME_FORMATTER));
-        }
-
-        // Mise à jour de l'agence si fournie
-        if (colisRequestDto.getAgenceId() != null) {
-            Agence agence = agenceRepository.findById(colisRequestDto.getAgenceId())
-                    .orElseThrow(() -> new RuntimeException("Agence non trouvée avec l'ID: " + colisRequestDto.getAgenceId()));
-            existingColis.setAgence(agence);
-        }
-
-        // Mise à jour du client expéditeur si fournie
-        if (colisRequestDto.getClientId() != null) {
-            Client clientExpediteur = clientRepository.findById(colisRequestDto.getClientId())
-                    .orElseThrow(() -> new RuntimeException("Client non trouvé avec l'ID: " + colisRequestDto.getClientId()));
-            existingColis.setClientExpediteur(clientExpediteur);
-        }
-        
-        Colis updatedColis = colisRepository.save(existingColis);
-        return convertToDto(updatedColis);
-    }
-
-    @Override
-    @Transactional
-    public ColisResponseDto updateColisForClient(Long colisId, Long clientId, ColisRequestDto colisRequestDto) {
-        Colis existingColis = colisRepository.findById(colisId)
-                .filter(colis -> colis.getClientExpediteur() != null && colis.getClientExpediteur().getId().equals(clientId))
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé ou non associé à ce client: " + colisId));
-
-        // Mettre à jour les champs autorisés pour un client
-        existingColis.setDescription(colisRequestDto.getDescription());
-        existingColis.setWeight(colisRequestDto.getWeight());
-        existingColis.setDimensions(colisRequestDto.getDimensions());
-        // Les autres champs sensibles (statut, agence, etc.) ne devraient pas être modifiables par le client ici.
-
-        Colis updatedColis = colisRepository.save(existingColis);
-        return convertToDto(updatedColis);
-    }
-
-    @Override
-    @Transactional
-    public void deleteColis(Long id) {
-        colisRepository.deleteById(id);
-    }
-
-    @Override
-    public void cancelColisForClient(Long colisId, Long clientId) {
-        Colis colis = colisRepository.findById(colisId)
-                .filter(c -> c.getClientExpediteur() != null && c.getClientExpediteur().getId().equals(clientId))
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé ou non associé à ce client."));
-
-        if (colis.getStatut() == ColisStatus.ENREGISTRE) {
-            colis.setStatut(ColisStatus.ANNULE);
-            colisRepository.save(colis);
-        } else {
-            throw new RuntimeException("Le colis ne peut être annulé que s'il est au statut ENREGISTRE.");
-        }
-    }
-
-    @Override
-    public ColisResponseDto getColisByTrackingNumber(String trackingNumber) {
-        return colisRepository.findByTrackingNumber(trackingNumber)
-                .map(this::convertToDto)
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé avec le numéro de suivi: " + trackingNumber));
-    }
-
-    @Override
-    @Transactional
-    public ColisResponseDto assignColisToVoyage(Long colisId, Long voyageId) {
-        Colis colis = colisRepository.findById(colisId)
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé avec l'ID: " + colisId));
-        Voyage voyage = voyageRepository.findById(voyageId)
-                .orElseThrow(() -> new RuntimeException("Voyage non trouvé avec l'ID: " + voyageId));
-
-        colis.setAssignedVoyage(voyage);
-        colis.setStatut(ColisStatus.EN_TRANSIT);
-        colis.setDateExpedition(LocalDateTime.now()); // Date d'expédition quand assigné au voyage
-        Colis updatedColis = colisRepository.save(colis);
-        return convertToDto(updatedColis);
-    }
-
-    @Override
-    @Transactional
-    public ColisResponseDto updateColisStatus(Long colisId, String newStatus) {
-        Colis colis = colisRepository.findById(colisId)
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé avec l'ID: " + colisId));
-
-        try {
-            ColisStatus status = ColisStatus.valueOf(newStatus.toUpperCase());
-            colis.setStatut(status);
-            if (status == ColisStatus.LIVRE) {
-                colis.setDateLivraisonReelle(LocalDateTime.now());
-            } else if (status == ColisStatus.ARRIVE_AGENCE_DESTINATION) {
-                colis.setDateArriveeAgenceDestination(LocalDateTime.now());
-            }
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Statut de colis invalide: " + newStatus);
-        }
-
-        Colis updatedColis = colisRepository.save(colis);
-        return convertToDto(updatedColis);
-    }
-
-    @Override
-    public void sendSenderPickupNotification(Long colisId) {
-        // Logique pour envoyer une notification à l'expéditeur (email/SMS)
-        System.out.println("Notification d'enlèvement envoyée à l'expéditeur pour le colis ID: " + colisId);
-    }
-
-    @Override
-    public void sendRecipientReadyForPickupNotification(Long colisId) {
-        // Logique pour envoyer une notification au destinataire (email/SMS)
-        System.out.println("Notification de colis prêt à être enlevé envoyée au destinataire pour le colis ID: " + colisId);
-    }
-
-    @Override
-    public void sendDeliveryConfirmationNotification(Long colisId) {
-        // Logique pour envoyer une notification de confirmation de livraison
-        System.out.println("Notification de confirmation de livraison envoyée pour le colis ID: " + colisId);
-    }
-
-    @Override
-    public List<ColisResponseDto> getColisByStatus(String status) {
-        ColisStatus colisStatus = ColisStatus.valueOf(status.toUpperCase());
-        return colisRepository.findByStatut(colisStatus).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ColisResponseDto> getColisByVoyageId(Long voyageId) {
-        return colisRepository.findByAssignedVoyageId(voyageId).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public void verifyColisOwnership(Long colisId, Long clientId) throws OperationNotAllowedException {
-        Colis colis = colisRepository.findById(colisId)
-                .orElseThrow(() -> new OperationNotAllowedException("Colis non trouvé."));
-        if (colis.getClientExpediteur() == null || !colis.getClientExpediteur().getId().equals(clientId)) {
-            throw new OperationNotAllowedException("Le client n'est pas l'expéditeur de ce colis.");
-        }
-    }
-
-    @Override
-    public List<ColisResponseDto> searchColis(String keyword) {
-        return colisRepository.searchByTrackingNumberOrNames(keyword).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public ColisResponseDto updateColisDeliveryDate(Long colisId, String newDeliveryDate) {
-        Colis colis = colisRepository.findById(colisId)
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé avec l'ID: " + colisId));
-        // Correction de l'incompatibilité de type pour newDeliveryDate
-        colis.setDateLivraisonPrevue(LocalDateTime.parse(newDeliveryDate, DATE_TIME_FORMATTER));
-        Colis updatedColis = colisRepository.save(colis);
-        return convertToDto(updatedColis);
-    }
-
-    @Override
-    @Transactional
-    public ColisResponseDto confirmColisPayment(String paymentReference) {
-        // Correction pour s'assurer que findByReferencePaiement retourne un Optional
-        Colis colis = colisRepository.findByReferencePaiement(paymentReference)
-                .orElseThrow(() -> new RuntimeException("Colis non trouvé avec la référence de paiement: " + paymentReference));
-
-        // Correction: Assurez-vous que ColisStatus.PAID existe dans votre enum ColisStatus
-        // Si ce n'est pas déjà fait, ajoutez 'PAID,' à l'enum ColisStatus dans Colis.java
-        // Exemple: public enum ColisStatus { ENREGISTRE, EN_TRANSIT, ARRIVE_AGENCE_DESTINATION, LIVRE, ANNULE, PAID }
-        if (colis.getStatut() == ColisStatus.ENREGISTRE) { // Ou un autre statut approprié pour le paiement
-            colis.setStatut(ColisStatus.PAID); 
-            colisRepository.save(colis);
-            return convertToDto(colis);
-        } else {
-            throw new RuntimeException("Le paiement pour ce colis ne peut pas être confirmé dans son état actuel.");
-        }
     }
 }
