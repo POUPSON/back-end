@@ -1,8 +1,3 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
 package PFE.CDSIR_AGENCY.controller;
 
 import PFE.CDSIR_AGENCY.dto.ColisRequestDto;
@@ -34,18 +29,27 @@ import org.springframework.web.bind.annotation.RestController;
 )
 public class ColisController {
 	private final ColisService colisService;
+	// ClientService est toujours injecté car d'autres méthodes dans ce contrôleur l'utilisent.
 	private final ClientService clientService;
 
 	@Operation(
-			summary = "Enregistrer un nouveau colis pour le client connecté"
+			summary = "Enregistrer un nouveau colis (accessible à tous, sans authentification requise)"
 	)
 	@PostMapping
-	@PreAuthorize("hasRole('CLIENT')")
-	public ResponseEntity<ColisResponseDto> createColisForAuthenticatedClient(@RequestBody @Valid ColisRequestDto colisRequestDto) {
-		Long currentClientId = this.clientService.getCurrentAuthenticatedClientId();
-		ColisResponseDto createdColis = this.colisService.createColisForClient(currentClientId, colisRequestDto);
-		return new ResponseEntity(createdColis, HttpStatus.CREATED);
+	@PreAuthorize("permitAll()") // MODIFIÉ : Permet l'accès sans authentification
+	public ResponseEntity<ColisResponseDto> createColis(@RequestBody @Valid ColisRequestDto colisRequestDto) {
+		// Appel de la méthode du service qui ne nécessite pas d'ID client authentifié.
+		// Cette méthode sera utilisée pour les dépôts de colis "publics".
+		ColisResponseDto createdColis = this.colisService.createColis(colisRequestDto);
+		return new ResponseEntity<>(createdColis, HttpStatus.CREATED);
 	}
+
+	// NOTE IMPORTANTE : La méthode ci-dessus a été renommée de 'createColisForAuthenticatedClient' à 'createColis'
+	// pour mieux refléter qu'elle ne nécessite plus d'authentification spécifique.
+	// Si vous avez un formulaire côté client qui envoie un 'clientId', assurez-vous que votre backend
+	// peut gérer un colis sans 'clientExpediteur' lié ou que vous avez une logique pour le gérer.
+	// La méthode 'createColisForClient' de votre service est toujours disponible pour les cas où un client est authentifié.
+
 
 	@Operation(
 			summary = "Obtenir un colis par son ID (pour le client connecté)"
