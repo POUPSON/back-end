@@ -15,6 +15,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
+import java.util.Objects; // Importez Objects pour le hashCode et equals
 import lombok.Generated;
 
 @Entity
@@ -110,7 +111,6 @@ public class Colis {
     )
     private LocalDateTime dateLivraisonReelle;
 
-    // AJOUTÉ : Champ datePaiement
     @Column(name = "date_paiement")
     private LocalDateTime datePaiement;
 
@@ -476,13 +476,65 @@ public class Colis {
         this.assignedVoyage = assignedVoyage;
     }
 
+    // Ajout des méthodes equals et hashCode générées par Objects
+    @Override
+    @Generated
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Colis colis = (Colis) o;
+        return Objects.equals(id, colis.id) &&
+               Objects.equals(agence, colis.agence) &&
+               Objects.equals(clientExpediteur, colis.clientExpediteur) &&
+               Objects.equals(description, colis.description) &&
+               Objects.equals(weight, colis.weight) &&
+               Objects.equals(dimensions, colis.dimensions) &&
+               Objects.equals(estimatedCost, colis.estimatedCost) &&
+               Objects.equals(trackingNumber, colis.trackingNumber) &&
+               statut == colis.statut &&
+               Objects.equals(dateEnregistrement, colis.dateEnregistrement) &&
+               Objects.equals(dateExpedition, colis.dateExpedition) &&
+               Objects.equals(dateArriveeAgenceDestination, colis.dateArriveeAgenceDestination) &&
+               Objects.equals(dateLivraisonPrevue, colis.dateLivraisonPrevue) &&
+               Objects.equals(dateLivraisonReelle, colis.dateLivraisonReelle) &&
+               Objects.equals(datePaiement, colis.datePaiement) &&
+               Objects.equals(nomExpediteur, colis.nomExpediteur) &&
+               Objects.equals(telephoneExpediteur, colis.telephoneExpediteur) &&
+               Objects.equals(emailExpediteur, colis.emailExpediteur) &&
+               Objects.equals(villeOrigine, colis.villeOrigine) &&
+               Objects.equals(quartierExpedition, colis.quartierExpedition) &&
+               Objects.equals(nomDestinataire, colis.nomDestinataire) &&
+               Objects.equals(numeroDestinataire, colis.numeroDestinataire) &&
+               Objects.equals(emailDestinataire, colis.emailDestinataire) &&
+               Objects.equals(villeDeDestination, colis.villeDeDestination) &&
+               Objects.equals(quartierDestination, colis.quartierDestination) &&
+               Objects.equals(modePaiement, colis.modePaiement) &&
+               Objects.equals(referencePaiement, colis.referencePaiement) &&
+               Objects.equals(codeValidation, colis.codeValidation) &&
+               Objects.equals(assignedVoyage, colis.assignedVoyage);
+    }
+
+    @Override
+    @Generated
+    public int hashCode() {
+        return Objects.hash(id, agence, clientExpediteur, description, weight, dimensions, estimatedCost,
+                            trackingNumber, statut, dateEnregistrement, dateExpedition,
+                            dateArriveeAgenceDestination, dateLivraisonPrevue, dateLivraisonReelle,
+                            datePaiement, nomExpediteur, telephoneExpediteur, emailExpediteur,
+                            villeOrigine, quartierExpedition, nomDestinataire, numeroDestinataire,
+                            emailDestinataire, villeDeDestination, quartierDestination,
+                            modePaiement, referencePaiement, codeValidation, assignedVoyage);
+    }
+
+
     public static enum ColisStatus {
         ENREGISTRE,
+        EXPEDIE, // AJOUTÉ : L'état EXPEDIE
         EN_TRANSIT,
         ARRIVE_AGENCE_DESTINATION,
         PRET_POUR_RAMASSAGE,
         LIVRE,
         ANNULE,
-        PAYE; // Assurez-vous que PAYE existe dans votre enum
+        PAYE;
     }
 }
