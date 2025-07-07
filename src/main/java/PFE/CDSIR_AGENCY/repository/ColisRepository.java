@@ -20,6 +20,9 @@ public interface ColisRepository extends JpaRepository<Colis, Long> {
 	List<Colis> findByEmailExpediteur(String emailExpediteur);
 	List<Colis> findByTelephoneExpediteur(String telephoneExpediteur);
 	List<Colis> findByNumeroDestinataireOrEmailDestinataire(String numeroDestinataire, String emailDestinataire);
+	// Si findByReferencePaiement doit retourner un Optional<Colis> (pour une référence unique),
+	// sa signature dans le repository devrait être Optional<Colis> findByReferencePaiement(String referencePaiement);
+	// Actuellement, elle retourne List<Colis>, ce qui est géré dans ColisServiceImpl avec .stream().findFirst().
 	List<Colis> findByReferencePaiement(String referencePaiement);
 	Optional<Colis> findByIdAndClientExpediteurId(Long id, Long clientExpediteurId);
 
@@ -30,10 +33,11 @@ public interface ColisRepository extends JpaRepository<Colis, Long> {
 	@Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Colis c WHERE c.id = :id AND c.clientExpediteur.id = :clientId")
 	boolean existsByIdAndClientId(@Param("id") Long id, @Param("clientId") Long clientId);
 
-	// Méthodes pour les destinataires
-	List<Colis> findByClientDestinataireId(Long clientDestinataireId);
-	@Query("SELECT c FROM Colis c WHERE c.clientDestinataire.id = :clientDestId")
-	List<Colis> findByClientDestinataire(@Param("clientDestId") Long clientDestId);
+	// --- MÉTHODES SUPPRIMÉES CAR LA PROPRIÉTÉ 'clientDestinataire' N'EXISTE PAS DANS L'ENTITÉ COLIS ---
+	// List<Colis> findByClientDestinataireId(Long clientDestinataireId);
+	// @Query("SELECT c FROM Colis c WHERE c.clientDestinataire.id = :clientDestId")
+	// List<Colis> findByClientDestinataire(@Param("clientDestId") Long clientDestId);
+	// --- FIN DES MÉTHODES SUPPRIMÉES ---
 
 	// Méthode de recherche
 	@Query("SELECT c FROM Colis c WHERE " +
