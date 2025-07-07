@@ -11,13 +11,13 @@ public class ColisResponseDto {
     private Double estimatedCost;
     private String trackingNumber;
     private Colis.ColisStatus statut;
-    // Changement de LocalDateTime à String pour les dates
+    // MODIFIÉ : Changement de LocalDateTime à String pour toutes les dates
     private String dateEnregistrement;
     private String dateExpedition;
     private String dateArriveeAgenceDestination;
     private String dateLivraisonPrevue;
     private String dateLivraisonReelle;
-    private String datePaiement; // AJOUTÉ : Champ pour la date de paiement
+    private String datePaiement; // AJOUTÉ : Champ pour la date de paiement (type String)
 
     private Long clientId;
     private String senderName;
@@ -75,37 +75,37 @@ public class ColisResponseDto {
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Getter retourne String
     public String getDateEnregistrement() {
         return this.dateEnregistrement;
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Getter retourne String
     public String getDateExpedition() {
         return this.dateExpedition;
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Getter retourne String
     public String getDateArriveeAgenceDestination() {
         return this.dateArriveeAgenceDestination;
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Getter retourne String
     public String getDateLivraisonPrevue() {
         return this.dateLivraisonPrevue;
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Getter retourne String
     public String getDateLivraisonReelle() {
         return this.dateLivraisonReelle;
     }
 
     @Generated
-    // AJOUTÉ : Getter pour datePaiement
+    // AJOUTÉ : Getter pour datePaiement (retourne String)
     public String getDatePaiement() {
         return this.datePaiement;
     }
@@ -241,37 +241,37 @@ public class ColisResponseDto {
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Setter accepte String
     public void setDateEnregistrement(final String dateEnregistrement) {
         this.dateEnregistrement = dateEnregistrement;
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Setter accepte String
     public void setDateExpedition(final String dateExpedition) {
         this.dateExpedition = dateExpedition;
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Setter accepte String
     public void setDateArriveeAgenceDestination(final String dateArriveeAgenceDestination) {
         this.dateArriveeAgenceDestination = dateArriveeAgenceDestination;
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Setter accepte String
     public void setDateLivraisonPrevue(final String dateLivraisonPrevue) {
         this.dateLivraisonPrevue = dateLivraisonPrevue;
     }
 
     @Generated
-    // Changement de LocalDateTime à String
+    // MODIFIÉ : Setter accepte String
     public void setDateLivraisonReelle(final String dateLivraisonReelle) {
         this.dateLivraisonReelle = dateLivraisonReelle;
     }
 
     @Generated
-    // AJOUTÉ : Setter pour datePaiement
+    // AJOUTÉ : Setter pour datePaiement (accepte String)
     public void setDatePaiement(final String datePaiement) {
         this.datePaiement = datePaiement;
     }
