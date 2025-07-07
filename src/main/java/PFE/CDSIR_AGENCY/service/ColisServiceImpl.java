@@ -2,11 +2,17 @@ package PFE.CDSIR_AGENCY.service.impl;
 
 import PFE.CDSIR_AGENCY.dto.ColisRequestDto;
 import PFE.CDSIR_AGENCY.dto.ColisResponseDto;
-import PFE.CDSIR_AGENCY.entity.*;
+import PFE.CDSIR_AGENCY.entity.Agence;
+import PFE.CDSIR_AGENCY.entity.Client;
+import PFE.CDSIR_AGENCY.entity.Colis;
 import PFE.CDSIR_AGENCY.entity.Colis.ColisStatus;
+import PFE.CDSIR_AGENCY.entity.Voyage;
 import PFE.CDSIR_AGENCY.exception.ColisNotFoundException;
 import PFE.CDSIR_AGENCY.exception.OperationNotAllowedException;
-import PFE.CDSIR_AGENCY.repository.*;
+import PFE.CDSIR_AGENCY.repository.AgenceRepository;
+import PFE.CDSIR_AGENCY.repository.ClientRepository;
+import PFE.CDSIR_AGENCY.repository.ColisRepository;
+import PFE.CDSIR_AGENCY.repository.VoyageRepository;
 import PFE.CDSIR_AGENCY.service.ColisService;
 import PFE.CDSIR_AGENCY.util.TrackingNumberGenerator;
 import org.springframework.stereotype.Service;
@@ -102,9 +108,19 @@ public class ColisServiceImpl implements ColisService {
 
     @Override
     public List<ColisResponseDto> getColisByRecipientId(Long recipientId) {
-        List<Colis> colisList = colisRepository.findByClientDestinataireId(recipientId);
+        // CORRECTION ICI : Remplacer l'appel à findByClientDestinataireId
+        // par une recherche basée sur les informations du client destinataire
+        Client recipientClient = clientRepository.findById(recipientId)
+                .orElseThrow(() -> new ColisNotFoundException("Client destinataire non trouvé avec l'ID: " + recipientId));
+
+        // Assurez-vous que votre entité Client a getPhoneNumber() et getEmail()
+        String recipientPhone = recipientClient.getPhoneNumber();
+        String recipientEmail = recipientClient.getEmail();
+
+        List<Colis> colisList = colisRepository.findByNumeroDestinataireOrEmailDestinataire(recipientPhone, recipientEmail);
+
         if (colisList.isEmpty()) {
-            throw new ColisNotFoundException("Aucun colis trouvé pour le destinataire ID: " + recipientId);
+            throw new ColisNotFoundException("Aucun colis trouvé pour le destinataire (téléphone/email): " + recipientPhone + " / " + recipientEmail);
         }
         return colisList.stream()
                 .map(this::convertToDto)
@@ -239,7 +255,6 @@ public class ColisServiceImpl implements ColisService {
     @Override
     @Transactional
     public ColisResponseDto confirmColisPayment(String paymentReference) {
-        // Corrected line 243 (or near there, depending on exact formatting)
         // Assuming findByReferencePaiement returns List<Colis> and we want the first one
         Colis colis = colisRepository.findByReferencePaiement(paymentReference).stream()
                 .findFirst() // Get an Optional<Colis> from the list
@@ -326,12 +341,16 @@ public class ColisServiceImpl implements ColisService {
         dto.setEstimatedCost(colis.getEstimatedCost());
         dto.setTrackingNumber(colis.getTrackingNumber());
         dto.setStatut(colis.getStatut());
-        dto.setDateEnregistrement(colis.getDateEnregistrement());
-        dto.setDateExpedition(colis.getDateExpedition());
-        dto.setDateArriveeAgenceDestination(colis.getDateArriveeAgenceDestination());
-        // Ligne corrigée : Passe directement le LocalDateTime
-        dto.setDateLivraisonPrevue(colis.getDateLivraisonPrevue());
-        dto.setDateLivraisonReelle(colis.getDateLivraisonReelle());
+        // Conversion des LocalDateTime en String si nécessaire pour le DTO
+        dto.setDateEnregistrement(colis.getDateEnregistrement() != null ? colis.getDateEnregistrement().format(DATE_FORMATTER) : null);
+        dto.setDateExpedition(colis.getDateExpedition() != null ? colis.getDateExpedition().format(DATE_FORMATTER) : null);
+        dto.setDateArriveeAgenceDestination(colis.getDateArriveeAgenceDestination() != null ? colis.getDateArriveeAgenceDestination().format(DATE_FORMATTER) : null);
+        dto.setDateLivraisonPrevue(colis.getDateLivraisonPrevue() != null ? colis.getDateLivraisonPrevue().format(DATE_FORMATTER) : null);
+        dto.setDateLivraisonReelle(colis.getDateLivraisonReelle() != null ? colis.getDateLivraisonReelle().format(DATE_FORMATTER) : null);
+        // Ajout de la date de paiement si elle existe
+        dto.setDatePaiement(colis.getDatePaiement() != null ? colis.getDatePaiement().format(DATE_FORMATTER) : null);
+
+
         dto.setSenderName(colis.getNomExpediteur());
         dto.setSenderPhone(colis.getTelephoneExpediteur());
         dto.setSenderEmail(colis.getEmailExpediteur());
