@@ -91,8 +91,8 @@ public class SecurityConfig {
 
 				// Autorisations des requêtes
 				.authorizeHttpRequests(auth -> auth
-				    // TRÈS IMPORTANT : Permet TOUTES les requêtes OPTIONS sans authentification en premier
-				    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+				    // TRÈS IMPORTANT : Permet TOUTES les requêtes OPTIONS sans authentification en premier
+				    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 					.requestMatchers("/", "/error").permitAll()
 						// AJOUTÉ : Permet les requêtes POST vers /api/colis sans authentification
 						.requestMatchers(HttpMethod.POST, "/api/colis").permitAll()
