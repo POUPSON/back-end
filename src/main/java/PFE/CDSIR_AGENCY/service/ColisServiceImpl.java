@@ -111,7 +111,6 @@ public class ColisServiceImpl implements ColisService {
         Client recipientClient = clientRepository.findById(recipientId)
                 .orElseThrow(() -> new ColisNotFoundException("Client destinataire non trouvé avec l'ID: " + recipientId));
 
-        // CORRECTION ICI : Utilisation de getTelephone() et getEmail() sur l'entité Client
         String recipientPhone = recipientClient.getTelephone(); // Assurez-vous que Client a getTelephone()
         String recipientEmail = recipientClient.getEmail();     // Assurez-vous que Client a getEmail()
 
@@ -335,14 +334,14 @@ public class ColisServiceImpl implements ColisService {
         dto.setEstimatedCost(colis.getEstimatedCost());
         dto.setTrackingNumber(colis.getTrackingNumber());
         dto.setStatut(colis.getStatut());
-        // Conversion des LocalDateTime en String si nécessaire pour le DTO
-        dto.setDateEnregistrement(colis.getDateEnregistrement() != null ? colis.getDateEnregistrement().format(DATE_FORMATTER) : null);
-        dto.setDateExpedition(colis.getDateExpedition() != null ? colis.getDateExpedition().format(DATE_FORMATTER) : null);
-        dto.setDateArriveeAgenceDestination(colis.getDateArriveeAgenceDestination() != null ? colis.getDateArriveeAgenceDestination().format(DATE_FORMATTER) : null);
-        dto.setDateLivraisonPrevue(colis.getDateLivraisonPrevue() != null ? colis.getDateLivraisonPrevue().format(DATE_FORMATTER) : null);
-        dto.setDateLivraisonReelle(colis.getDateLivraisonReelle() != null ? colis.getDateLivraisonReelle().format(DATE_FORMATTER) : null);
+        // Correction des incompatibilités de type pour les dates
+        dto.setDateEnregistrement(colis.getDateEnregistrement() != null ? colis.getDateEnregistrement().format(DATE_FORMATTER) : (String) null);
+        dto.setDateExpedition(colis.getDateExpedition() != null ? colis.getDateExpedition().format(DATE_FORMATTER) : (String) null);
+        dto.setDateArriveeAgenceDestination(colis.getDateArriveeAgenceDestination() != null ? colis.getDateArriveeAgenceDestination().format(DATE_FORMATTER) : (String) null);
+        dto.setDateLivraisonPrevue(colis.getDateLivraisonPrevue() != null ? colis.getDateLivraisonPrevue().format(DATE_FORMATTER) : (String) null);
+        dto.setDateLivraisonReelle(colis.getDateLivraisonReelle() != null ? colis.getDateLivraisonReelle().format(DATE_FORMATTER) : (String) null);
         // Ajout de la date de paiement si elle existe
-        dto.setDatePaiement(colis.getDatePaiement() != null ? colis.getDatePaiement().format(DATE_FORMATTER) : null);
+        dto.setDatePaiement(colis.getDatePaiement() != null ? colis.getDatePaiement().format(DATE_FORMATTER) : (String) null);
 
 
         dto.setSenderName(colis.getNomExpediteur());
