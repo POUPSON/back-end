@@ -1,10 +1,10 @@
 package PFE.CDSIR_AGENCY.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore; // Importez cette annotation
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType; // Ajoutez FetchType si non présent
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,6 +15,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import java.util.Objects; // Importez Objects pour les méthodes equals et hashCode
 import lombok.Generated;
 
 @Entity
@@ -87,14 +88,13 @@ public class Agence {
 	)
 	private String statut;
 
-	// AJOUTEZ @JsonIgnore sur toutes les collections OneToMany
 	@OneToMany(
 			mappedBy = "agence",
 			cascade = {CascadeType.ALL},
 			orphanRemoval = true,
 			fetch = FetchType.LAZY
 	)
-	@JsonIgnore // <-- AJOUTÉ
+	@JsonIgnore
 	private List<Administrateur> administrateurs;
 
 	@OneToMany(
@@ -103,7 +103,7 @@ public class Agence {
 			orphanRemoval = true,
 			fetch = FetchType.LAZY
 	)
-	@JsonIgnore // <-- AJOUTÉ
+	@JsonIgnore
 	private List<Vehicule> vehicules;
 
 	@OneToMany(
@@ -112,7 +112,7 @@ public class Agence {
 			orphanRemoval = true,
 			fetch = FetchType.LAZY
 	)
-	@JsonIgnore // <-- AJOUTÉ
+	@JsonIgnore
 	private List<Voyage> voyages;
 
 	@OneToMany(
@@ -121,11 +121,12 @@ public class Agence {
 			orphanRemoval = true,
 			fetch = FetchType.LAZY
 	)
-	@JsonIgnore // <-- AJOUTÉ
+	@JsonIgnore
 	private List<Colis> colis;
 
-	// --- Getters et Setters générés par Lombok ou manuellement ---
-	// (Les annotations @Generated indiquent qu'ils sont générés)
+	@Generated
+	public Agence() {
+	}
 
 	@Generated
 	public Long getId() {
@@ -227,104 +228,25 @@ public class Agence {
 		this.colis = colis;
 	}
 
+	// Réécriture des méthodes equals et hashCode pour utiliser java.util.Objects
+	@Override
 	@Generated
-	public boolean equals(final Object o) {
-		if (o == this) {
-			return true;
-		} else if (!(o instanceof Agence)) {
-			return false;
-		} else {
-			Agence other = (Agence)o;
-			if (!other.canEqual(this)) {
-				return false;
-			} else {
-				Object this$id = this.getId();
-				Object other$id = other.getId();
-				if (this$id == null) {
-					if (other$id != null) {
-						return false;
-					}
-				} else if (!this$id.equals(other$id)) {
-					return false;
-				}
-
-				Object this$nomAgence = this.getNomAgence();
-				Object other$nomAgence = other.getNomAgence();
-				if (this$nomAgence == null) {
-					if (other$nomAgence != null) {
-						return false;
-					}
-				} else if (!this$nomAgence.equals(other$nomAgence)) {
-					return false;
-				}
-
-				Object this$villeAgence = this.getVilleAgence();
-				Object other$villeAgence = other.getVilleAgence();
-				if (this$villeAgence == null) {
-					if (other$villeAgence != null) {
-						return false;
-					}
-				} else if (!this$villeAgence.equals(other$villeAgence)) {
-					return false;
-				}
-
-				Object this$localisation = this.getLocalisation();
-				Object other$localisation = other.getLocalisation();
-				if (this$localisation == null) {
-					if (other$localisation != null) {
-						return false;
-					}
-				} else if (!this$localisation.equals(other$localisation)) {
-					return false;
-				}
-
-				Object this$telephoneAgence = this.getTelephoneAgence();
-				Object other$telephoneAgence = other.getTelephoneAgence();
-				if (this$telephoneAgence == null) {
-					if (other$telephoneAgence != null) {
-						return false;
-					}
-				} else if (!this$telephoneAgence.equals(other$telephoneAgence)) {
-					return false;
-				}
-
-				Object this$statut = this.getStatut();
-				Object other$statut = other.getStatut();
-				if (this$statut == null) {
-					if (other$statut != null) {
-						return false;
-					}
-				} else if (!this$statut.equals(other$statut)) {
-					return false;
-				}
-
-				return true;
-			}
-		}
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		Agence agence = (Agence) o;
+		return Objects.equals(id, agence.id) &&
+			   Objects.equals(nomAgence, agence.nomAgence) &&
+			   Objects.equals(villeAgence, agence.villeAgence) &&
+			   Objects.equals(localisation, agence.localisation) &&
+			   Objects.equals(telephoneAgence, agence.telephoneAgence) &&
+			   Objects.equals(statut, agence.statut);
 	}
 
-	@Generated
-	protected boolean canEqual(final Object other) {
-		return other instanceof Agence;
-	}
-
+	@Override
 	@Generated
 	public int hashCode() {
-		int PRIME = 59;
-		int result = 1;
-		Object $id = this.getId();
-		result = result * 59 + ($id == null ? 43 : $id.hashCode());
-		Object $nomAgence = this.getNomAgence();
-		result = result * 59 + ($nomAgence == null ? 43 : $nomAgence.hashCode());
-		Object $villeAgence = this.getVilleAgence();
-		result = result * 59 + ($villeAgence == null ? 43 : $villeAgence.hashCode());
-		Object $localisation = this.getLocalisation();
-		result = result * 59 + ($localisation == null ? 43 : $localisation.hashCode());
-		Object $telephoneAgence = this.getTelephoneAgence();
-		result = result * 59 + ($telephoneAgence == null ? 43 : $telephoneAgence.hashCode());
-		Object $statut = this.getStatut();
-		result = result * 59 + ($statut == null ? 43 : $statut.hashCode());
-		return result;
+		return Objects.hash(id, nomAgence, villeAgence, localisation, telephoneAgence, statut);
 	}
 
 	@Generated
