@@ -91,9 +91,11 @@ public class SecurityConfig {
 
 				// Autorisations des requêtes
 				.authorizeHttpRequests(auth -> auth
-				    // TRÈS IMPORTANT : Permet TOUTES les requêtes OPTIONS sans authentification en premier
-				    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+				    // TRÈS IMPORTANT : Permet TOUTES les requêtes OPTIONS sans authentification en premier
+				    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 					.requestMatchers("/", "/error").permitAll()
+						// AJOUTÉ : Permet les requêtes POST vers /api/colis sans authentification
+						.requestMatchers(HttpMethod.POST, "/api/colis").permitAll()
 						.requestMatchers(
 								"/api/clients/register",
 								"/api/clients/login",
@@ -112,7 +114,7 @@ public class SecurityConfig {
 								"/swagger-ui.html"
 						).permitAll()
 						// TEMPORAIRE POUR DEBUG : Permet TOUTES les requêtes admin sans authentification
-						.requestMatchers("/api/admin/**").permitAll() // <-- CHANGEMENT MAJEUR ICI
+						.requestMatchers("/api/admin/**").permitAll()
 						// Ancienne ligne commentée (à remettre en production) :
 						// .requestMatchers("/api/admin/register").hasRole("ADMIN")
 						// .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -120,7 +122,10 @@ public class SecurityConfig {
 						.requestMatchers("/api/reservation/client/**").hasAnyRole("CLIENT", "AGENT")
 						.requestMatchers("/api/reservation/validate").hasRole("AGENT")
 						.requestMatchers(
-								"/api/colis",
+								// MODIFIÉ : "/api/colis" a été retiré d'ici car le POST est maintenant permitAll
+								// Les autres méthodes (GET, PUT, DELETE) sur /api/colis/{id} nécessiteront toujours le rôle CLIENT
+								// si elles ne sont pas explicitement permitAll.
+								// "/api/colis", // <-- CETTE LIGNE A ÉTÉ RETIRÉE
 								"/api/colis/{id}",
 								"/api/colis/cancel/{id}",
 								"/api/colis/my-sent-history",
@@ -138,8 +143,6 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 				// Configuration du provider d'authentification et du filtre JWT
-				// Nous laissons le filtre et le provider, mais ils ne s'appliqueront pas aux routes /api/admin/**
-				// tant que .permitAll() est actif.
 				.authenticationProvider(authenticationProvider())
 				.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 
