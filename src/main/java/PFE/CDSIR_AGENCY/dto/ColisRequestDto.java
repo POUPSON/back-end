@@ -1,10 +1,6 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
 package PFE.CDSIR_AGENCY.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat; // Importez cette annotation
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -106,6 +102,9 @@ public class ColisRequestDto {
 			max = 100,
 			message = "La référence de paiement ne peut pas dépasser 100 caractères"
 	) String paymentReference;
+
+	// AJOUTÉ : Annotation pour spécifier le format de désérialisation/sérialisation
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm")
 	private LocalDateTime plannedDeliveryDate;
 
 	@Generated
