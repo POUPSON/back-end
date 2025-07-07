@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter; // Import ajouté pour le parsing de date
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +32,13 @@ public class ColisServiceImpl implements ColisService {
     private final AgenceRepository agenceRepository;
     private final ClientRepository clientRepository;
     private final VoyageRepository voyageRepository;
+
+    // Définir un formateur de date/heure si vos dates sont des chaînes spécifiques
+    // Exemple: "yyyy-MM-dd HH:mm:ss" ou "yyyy-MM-dd'T'HH:mm:ss"
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    // Ajustez le format si vos chaînes de date sont différentes.
+    // Par exemple, si c'est juste une date "yyyy-MM-dd", utilisez DateTimeFormatter.ISO_LOCAL_DATE
+    // et convertissez en LocalDateTime.of(LocalDate.parse(dateString), LocalTime.MIDNIGHT)
 
     public ColisServiceImpl(ColisRepository colisRepository,
                             AgenceRepository agenceRepository,
@@ -65,8 +73,8 @@ public class ColisServiceImpl implements ColisService {
         }
 
         dto.setSenderName(colis.getNomExpediteur());
-        dto.setSenderPhone(colis.getTelephoneExpediteur());
-        dto.setSenderEmail(colis.getEmailExpediteur());
+        dto.setTelephoneExpediteur(colis.getTelephoneExpediteur());
+        dto.setEmailExpediteur(colis.getEmailExpediteur());
         dto.setVilleOrigine(colis.getVilleOrigine());
         dto.setQuartierExpedition(colis.getQuartierExpedition());
 
@@ -136,7 +144,12 @@ public class ColisServiceImpl implements ColisService {
         colis.setDateEnregistrement(LocalDateTime.now());
         colis.setStatut(ColisStatus.ENREGISTRE);
         colis.setTrackingNumber(TrackingNumberGenerator.generateTrackingNumber());
-        colis.setDateLivraisonPrevue(colisRequestDto.getPlannedDeliveryDate());
+        
+        // Correction de l'incompatibilité de type pour plannedDeliveryDate
+        if (colisRequestDto.getPlannedDeliveryDate() != null) {
+            colis.setDateLivraisonPrevue(LocalDateTime.parse(colisRequestDto.getPlannedDeliveryDate(), DATE_TIME_FORMATTER));
+        }
+
 
         colis.setCodeValidation(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
 
@@ -221,7 +234,11 @@ public class ColisServiceImpl implements ColisService {
         existingColis.setQuartierDestination(colisRequestDto.getDestinationNeighborhood());
         existingColis.setModePaiement(colisRequestDto.getModePaiement());
         existingColis.setReferencePaiement(colisRequestDto.getPaymentReference());
-        existingColis.setDateLivraisonPrevue(colisRequestDto.getPlannedDeliveryDate());
+        
+        // Correction de l'incompatibilité de type pour plannedDeliveryDate
+        if (colisRequestDto.getPlannedDeliveryDate() != null) {
+            existingColis.setDateLivraisonPrevue(LocalDateTime.parse(colisRequestDto.getPlannedDeliveryDate(), DATE_TIME_FORMATTER));
+        }
 
         // Mise à jour de l'agence si fournie
         if (colisRequestDto.getAgenceId() != null) {
@@ -375,7 +392,8 @@ public class ColisServiceImpl implements ColisService {
     public ColisResponseDto updateColisDeliveryDate(Long colisId, String newDeliveryDate) {
         Colis colis = colisRepository.findById(colisId)
                 .orElseThrow(() -> new RuntimeException("Colis non trouvé avec l'ID: " + colisId));
-        colis.setDateLivraisonPrevue(newDeliveryDate); // Assurez-vous que le type de date est compatible
+        // Correction de l'incompatibilité de type pour newDeliveryDate
+        colis.setDateLivraisonPrevue(LocalDateTime.parse(newDeliveryDate, DATE_TIME_FORMATTER));
         Colis updatedColis = colisRepository.save(colis);
         return convertToDto(updatedColis);
     }
@@ -383,11 +401,15 @@ public class ColisServiceImpl implements ColisService {
     @Override
     @Transactional
     public ColisResponseDto confirmColisPayment(String paymentReference) {
+        // Correction pour s'assurer que findByReferencePaiement retourne un Optional
         Colis colis = colisRepository.findByReferencePaiement(paymentReference)
                 .orElseThrow(() -> new RuntimeException("Colis non trouvé avec la référence de paiement: " + paymentReference));
 
+        // Correction: Assurez-vous que ColisStatus.PAID existe dans votre enum ColisStatus
+        // Si ce n'est pas déjà fait, ajoutez 'PAID,' à l'enum ColisStatus dans Colis.java
+        // Exemple: public enum ColisStatus { ENREGISTRE, EN_TRANSIT, ARRIVE_AGENCE_DESTINATION, LIVRE, ANNULE, PAID }
         if (colis.getStatut() == ColisStatus.ENREGISTRE) { // Ou un autre statut approprié pour le paiement
-            colis.setStatut(ColisStatus.PAID); // Assurez-vous d'avoir un statut PAID dans votre enum ColisStatus
+            colis.setStatut(ColisStatus.PAID); 
             colisRepository.save(colis);
             return convertToDto(colis);
         } else {
